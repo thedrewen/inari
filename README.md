@@ -1,5 +1,13 @@
 # Inari
 
+![Version](https://img.shields.io/badge/version-0.0.1-informational)
+[![Discord](https://img.shields.io/discord/aaNVx6Pucw?logo=discord&logoColor=white&label=Discord&color=5865f2)](https://discord.com/invite/aaNVx6Pucw)
+![Angular](https://img.shields.io/badge/Angular-22-dd0031?logo=angular&logoColor=white)
+![NestJS](https://img.shields.io/badge/NestJS-11-e0234e?logo=nestjs&logoColor=white)
+![Node.js](https://img.shields.io/badge/Node.js-26-339933?logo=node.js&logoColor=white)
+![TypeScript](https://img.shields.io/badge/TypeScript-6-3178c6?logo=typescript&logoColor=white)
+![License](https://img.shields.io/badge/license-open%20source-blue)
+
 Inari is a SaaS platform for voice channels with user account management, a plugin system, and deep customization. The project is open source and hosted by [FoxDroidLabs](https://foxdroidlabs.com).
 
 ## Tech stack

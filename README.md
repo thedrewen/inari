@@ -12,9 +12,9 @@ Inari is a SaaS platform for voice channels with user account management, a plug
 
 ## Tech stack
 
-**Frontend** — Angular 22 with server-side rendering (SSR)  
-**API** — NestJS  
-**Server** — Node.js WebSocket server
+**Frontend** - Angular 22 with server-side rendering (SSR)  
+**API** - NestJS  
+**Server** - Node.js WebSocket server
 
 ## Architecture
 

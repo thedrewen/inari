@@ -6,7 +6,7 @@
 ![NestJS](https://img.shields.io/badge/NestJS-11-e0234e?logo=nestjs&logoColor=white)
 ![Node.js](https://img.shields.io/badge/Node.js-26-339933?logo=node.js&logoColor=white)
 ![TypeScript](https://img.shields.io/badge/TypeScript-6-3178c6?logo=typescript&logoColor=white)
-![License](https://img.shields.io/badge/license-open%20source-blue)
+[![License: AGPL v3](https://img.shields.io/badge/license-AGPL%20v3-blue)](https://www.gnu.org/licenses/agpl-3.0)
 
 Inari is a SaaS platform for voice channels with user account management, a plugin system, and deep customization. The project is open source and hosted by [FoxDroidLabs](https://foxdroidlabs.com).
 
@@ -36,4 +36,6 @@ The project requires a `.env` file at the root of each service. Refer to the cor
 
 ## License
 
-Open source — see `LICENSE`.
+This project is licensed under the **GNU Affero General Public License v3.0 (AGPL-3.0)**.
+
+Any modification must be released under the same license. Using this software as a network service (SaaS) also requires making the source code publicly available. Commercial use without complying with these terms is not permitted.

@@ -5,6 +5,7 @@ use dotenvy::dotenv;
 mod handle_client;
 mod logger;
 mod routes;
+mod manager;
 
 #[tokio::main]
 async fn main() {

@@ -1,5 +1,5 @@
 <div align="center">
-<img src="./assets/inari.png" width="250px">
+<img src="./assets/inari-inverted.png" width="250px">
 <h1>
 Inari
 </h1>

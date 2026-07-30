@@ -28,7 +28,7 @@ async fn main() {
         .unwrap_or(3030);
     
     logger::log_info(String::from("Starting web server..."));
-
-    logger::log_info(format!("Started on :{port}"));
+    
+    logger::log_info(format!("Started on http://0.0.0.0:{port}"));
     warp::serve(routes::all().await).run(([0, 0, 0, 0], port)).await;
 }

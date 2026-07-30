@@ -1,9 +1,14 @@
-# Inari
+<div align="center">
+<img src="./assets/inari.png" width="250px">
+<h1>
+Inari
+</h1>
 
 ![Version](https://img.shields.io/badge/version-0.0.1-informational)
 [![License: AGPL v3](https://img.shields.io/badge/license-AGPL%20v3-blue)](https://www.gnu.org/licenses/agpl-3.0)
 
 A web app that lets you chat with people nearby in games like Minecraft, etc.
+</div>
 
 ## Tech stack
 

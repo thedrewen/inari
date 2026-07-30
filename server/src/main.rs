@@ -1,4 +1,33 @@
+use std::{env};
+
+use dotenvy::dotenv;
+
+mod handle_client;
+mod logger;
+mod routes;
+
 #[tokio::main]
 async fn main() {
-    println!("Hello, world!");
+    
+    dotenv().ok();
+
+    println!("
+ _____                 _ 
+|_   _|               (_)
+  | | _ __   __ _ _ __ _ 
+  | || '_ \\ / _` | '__| |
+ _| || | | | (_| | |  | |
+ \\___/_| |_|\\__,_|_|  |_|
+                         
+                         ");
+
+    let port: u16 = env::var("API_PORT")
+        .ok()
+        .and_then(|v| v.parse().ok())
+        .unwrap_or(3030);
+    
+    logger::log_info(String::from("Starting web server..."));
+
+    logger::log_info(format!("Started on :{port}"));
+    warp::serve(routes::all()).run(([0, 0, 0, 0], port)).await;
 }

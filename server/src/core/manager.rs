@@ -44,6 +44,8 @@ impl Manager {
             .await
             .unwrap();
 
+        logger::log_info(format!("Webrtc Server running on :44444"));
+
         let audio_codec = RtpCodecCapability::Audio {
             mime_type: MimeTypeAudio::Opus,
             preferred_payload_type: None,
@@ -77,7 +79,7 @@ impl Manager {
             kind: super::responses::WsResponsesKind::RtpCapabilities { rtp_capabilities },
             transaction_uuid: uuid
         };
-
+        
         client.send(response);
 
         self.clients.write().await.insert(id, client);

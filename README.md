@@ -31,6 +31,35 @@ inari/
 
 The project requires a `.env` file at the root of each service. Refer to the corresponding `.env.example` files.
 
+## Running
+
+### 1. Build project
+- **Requirement :** [Docker](https://www.docker.com/)
+
+To build the completed project:
+```bash
+git clone https://git.foxdroidlabs.com/Foxdroid-Prod/inari
+cd inari
+chmod +x build.sh && ./build.sh
+```
+
+### 3. Run
+Edit the .env file to configure the values to suit your server.
+
+#### A. Without Docker
+```bash
+cd target
+./inari
+```
+
+#### B. With Docker
+```bash
+docker buildx build -t inari .
+docker run --name inari -p 3030:3030 -p 44444:44444/udp --restart unless-stopped inari
+```
+
+By default, the project runs at http://localhost:3030.
+
 ## License
 
 This project is licensed under the **GNU Affero General Public License v3.0 (AGPL-3.0)**.

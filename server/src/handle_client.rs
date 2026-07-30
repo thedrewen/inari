@@ -19,8 +19,8 @@ pub async fn handle_client(ws: WebSocket, manager: Manager, id: usize) {
 
     while let Some(result) = rx.next().await {
         match result {
-            Ok(msg) => {
-                
+            Ok(_msg) => {
+
             },
             Err(_) => break
         }

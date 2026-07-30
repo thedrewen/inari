@@ -1,18 +1,18 @@
-use std::{collections::HashMap, default, env, net::Ipv4Addr, num::{NonZeroU8, NonZeroU32}, sync::Arc};
+use std::{collections::HashMap, env, net::Ipv4Addr, num::{NonZeroU8, NonZeroU32}, sync::Arc};
 
 use mediasoup::{
-    router::{Router, RouterOptions}, types::{data_structures::{AppData, ListenInfo}, rtp_parameters::{MimeTypeAudio, RtpCodecCapability, RtpCodecParametersParameters}}, webrtc_server::{self, WebRtcServer, WebRtcServerListenInfos, WebRtcServerOptions}, worker::{self, Worker, WorkerSettings}, worker_manager::WorkerManager,
+    router::{Router, RouterOptions}, types::{data_structures::ListenInfo, rtp_parameters::{MimeTypeAudio, RtpCodecCapability, RtpCodecParametersParameters}}, webrtc_server::{WebRtcServer, WebRtcServerListenInfos, WebRtcServerOptions}, worker::WorkerSettings, worker_manager::WorkerManager,
 };
 use tokio::sync::RwLock;
 use uuid::Uuid;
 
-use crate::{core::{client::Client, responses::WsResponses}, logger};
+use crate::{core::{client::Client, responses::WsResponses}};
 
 #[derive(Clone)]
 pub struct Manager {
     clients: Arc<RwLock<HashMap<usize, Client>>>,
-    webrtc_server: WebRtcServer,
     router: Router,
+    _webrtc_server: WebRtcServer
 }
 
 impl Manager {
@@ -61,7 +61,7 @@ impl Manager {
 
         Self {
             clients: Arc::new(RwLock::new(HashMap::new())),
-            webrtc_server,
+            _webrtc_server: webrtc_server,
             router
         }
     }

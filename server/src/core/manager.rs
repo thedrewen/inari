@@ -4,8 +4,9 @@ use mediasoup::{
     router::{Router, RouterOptions}, types::{data_structures::{AppData, ListenInfo}, rtp_parameters::{MimeTypeAudio, RtpCodecCapability, RtpCodecParametersParameters}}, webrtc_server::{self, WebRtcServer, WebRtcServerListenInfos, WebRtcServerOptions}, worker::{self, Worker, WorkerSettings}, worker_manager::WorkerManager,
 };
 use tokio::sync::RwLock;
+use uuid::Uuid;
 
-use crate::core::client::Client;
+use crate::{core::{client::Client, responses::WsResponses}, logger};
 
 #[derive(Clone)]
 pub struct Manager {
@@ -67,6 +68,17 @@ impl Manager {
 
     pub async fn connect_client(&self, client: Client) {
         let id = client.get_id();
+
+        let rtp_capabilities = self.router.rtp_capabilities();
+        let uuid = Uuid::new_v4().to_string();
+
+        let response = WsResponses {
+            kind: super::responses::WsResponsesKind::RtpCapabilities { rtp_capabilities },
+            transaction_uuid: uuid
+        };
+
+        client.send(response);
+
         self.clients.write().await.insert(id, client);
     }
 

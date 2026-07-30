@@ -5,7 +5,7 @@ use dotenvy::dotenv;
 mod handle_client;
 mod logger;
 mod routes;
-mod manager;
+mod core;
 
 #[tokio::main]
 async fn main() {
@@ -30,5 +30,5 @@ async fn main() {
     logger::log_info(String::from("Starting web server..."));
 
     logger::log_info(format!("Started on :{port}"));
-    warp::serve(routes::all()).run(([0, 0, 0, 0], port)).await;
+    warp::serve(routes::all().await).run(([0, 0, 0, 0], port)).await;
 }

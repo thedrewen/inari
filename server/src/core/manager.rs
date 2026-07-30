@@ -6,7 +6,7 @@ use mediasoup::{
 use tokio::sync::RwLock;
 use uuid::Uuid;
 
-use crate::{core::{client::Client, responses::WsResponses}};
+use crate::{core::{client::Client, responses::WsResponses}, logger};
 
 #[derive(Clone)]
 pub struct Manager {
@@ -68,6 +68,7 @@ impl Manager {
 
     pub async fn connect_client(&self, client: Client) {
         let id = client.get_id();
+        logger::log_info(format!("User #{id} has logged in."));
 
         let rtp_capabilities = self.router.rtp_capabilities();
         let uuid = Uuid::new_v4().to_string();
@@ -84,5 +85,6 @@ impl Manager {
 
     pub async fn disconnect_client(&self, id: usize) {
         self.clients.write().await.remove(&id);
+        logger::log_info(format!("User #{id} has logged out."));
     }
 }

@@ -1,1 +1,24 @@
-/* You can add global styles to this file, and also import other style files */
+* {
+    margin: 0;
+}
+
+body {
+    background-image: radial-gradient(#ffffff28 2px, transparent 2px), radial-gradient(#ffffff28 2px, transparent 2px);
+    background-size: 60px 60px;
+    background-position: 0 0, 30px 30px;
+    background-color: #27272b;
+
+    width: 100%;
+    height: 100dvh;
+
+    animation: backgroundAnimation 20s linear infinite;
+}
+
+@keyframes backgroundAnimation {
+    0% {
+        background-position: 0 0, 30px 30px;
+    }
+    100% {
+        background-position: 60px 60px, 90px 90px;
+    }
+}

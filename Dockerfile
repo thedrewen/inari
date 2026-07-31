@@ -25,7 +25,7 @@ FROM debian:trixie-slim AS runner
 
 WORKDIR /app
 
-COPY --from=node-builder ./dist/inari/browser ./static
-COPY --from=rust-builder ./target/release/inari .
+COPY --from=node-builder /app/dist/inari/browser ./static
+COPY --from=rust-builder /app/target/release/inari .
 
 CMD ["./inari"]

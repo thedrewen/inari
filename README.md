@@ -13,6 +13,8 @@ A web app that lets you chat with people nearby in games like Minecraft, etc.
 
 - Our discord : https://discord.gg/4vCG6vMNDJ
 
+> ⚠️ The `main` branch contains the stable production code. `develop` is the active development branch, potentially unstable.
+
 ## Tech stack
 
 **Frontend** - Angular   
@@ -38,7 +40,7 @@ The project requires a `.env` file at the root of each service. Refer to the cor
 
 To build the completed project:
 ```bash
-git clone https://git.foxdroidlabs.com/Foxdroid-Prod/inari
+git clone -b main https://git.foxdroidlabs.com/Foxdroid-Prod/inari
 cd inari
 chmod +x build.sh && ./build.sh
 ```

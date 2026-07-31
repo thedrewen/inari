@@ -4,7 +4,7 @@ WORKDIR /app
 
 COPY frontend/ .
 
-RUN cd frontend && npm i && npm run build
+RUN npm i && npm run build
 
 # ---
 
@@ -17,7 +17,7 @@ COPY server/ .
 RUN apt-get update && apt-get install -y python3 python3-pip ninja-build && \
   rustup component add rustfmt
 
-RUN cd server && cargo build --release
+RUN cargo build --release
 
 # ---
 
@@ -25,7 +25,7 @@ FROM debian:trixie-slim AS runner
 
 WORKDIR /app
 
-COPY --from=node-builder ./frontend/dist/inari/browser ./static
-COPY --from=rust-builder ./server/target/release/inari .
+COPY --from=node-builder ./dist/inari/browser ./static
+COPY --from=rust-builder ./target/release/inari .
 
 CMD ["./inari"]

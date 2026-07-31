@@ -1,7 +1,7 @@
 use futures_util::{SinkExt, StreamExt};
 use warp::filters::ws::WebSocket;
 
-use crate::core::{client::Client, manager::Manager};
+use crate::core::{client::Client, manager::Manager, requests::WsRequests};
 
 pub async fn handle_client(ws: WebSocket, manager: Manager, id: usize) {
     let (mut tx, mut rx) = ws.split();
@@ -19,8 +19,21 @@ pub async fn handle_client(ws: WebSocket, manager: Manager, id: usize) {
 
     while let Some(result) = rx.next().await {
         match result {
-            Ok(_msg) => {
+            Ok(msg) => {
+                let value = msg.to_str();
+                if value.is_err() {
+                    continue;
+                }
+                let value = value.unwrap();
+                let value = serde_json::from_str(value);
+                if value.is_err() {
+                    continue;
+                }
+                let value: WsRequests = value.unwrap();
 
+                match value.kind {
+                    
+                }
             },
             Err(_) => break
         }

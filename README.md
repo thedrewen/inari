@@ -18,6 +18,10 @@ A web app that lets you chat with people nearby in games like Minecraft, etc.
 **Frontend** - Angular   
 **Server** - Rust with WebSocket
 
+## Issues
+
+If you have any issues, please contact us via Discord. We've set up a dedicated channel for this!
+
 ## Architecture
 
 ```

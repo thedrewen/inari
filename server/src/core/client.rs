@@ -6,15 +6,21 @@ use crate::core::responses::WsResponses;
 #[derive(Clone)]
 pub struct Client {
     id: usize,
-    mpsc_tx: UnboundedSender<Message>
+    mpsc_tx: UnboundedSender<Message>,
+    connected: bool
 }
 
 impl Client {
     pub fn new(id: usize, mpsc_tx: UnboundedSender<Message>) -> Self {
         Self {
             id,
-            mpsc_tx
+            mpsc_tx,
+            connected: false
         }
+    }
+
+    pub fn is_connected(&self) -> bool {
+        self.connected
     }
 
     pub fn get_id(&self) -> usize {

@@ -38,6 +38,7 @@ The project requires a `.env` file at the root of each service. Refer to the cor
 ## Running
 
 ### 1. Build project
+- **Only if :** You plan to deploy locally, without using Docker as a runner for production deployment.
 - **Requirement :** [Docker](https://www.docker.com/)
 
 To build the completed project:
@@ -57,6 +58,7 @@ cd target
 ```
 
 #### B. With Docker
+*You can skip the build step for Docker deployment.*
 ```bash
 docker buildx build -t inari .
 docker run --name inari -p 3030:3030 -p 44444:44444/udp --restart unless-stopped inari

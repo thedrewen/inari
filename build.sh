@@ -4,7 +4,7 @@ rm -rf target/*
 mkdir -p target
 
 cd frontend 
-docker run --rm -v .:/app -w /app node:26-alpine npm i && npm run build
+docker run --rm -v .:/app -w /app node:26 npm i && npm run build
 
 cd ..
 mv ./frontend/dist/inari/browser target/static

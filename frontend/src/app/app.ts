@@ -1,10 +1,6 @@
 import { Component, OnInit, signal } from '@angular/core';
 import { WebsocketService } from './services/websocket.service';
 
-enum PageState {
-    WAIT_FOR_CODE = 0,
-    LOGGING_IN = 1
-}
 
 @Component({
     selector: 'app-root',
@@ -13,11 +9,9 @@ enum PageState {
     styleUrl: './app.scss'
 })
 export class App implements OnInit {
-    public pageState = signal<PageState>(PageState.WAIT_FOR_CODE);
-    public PageState = PageState;
 
     constructor (
-        private readonly websocketService: WebsocketService
+        public readonly websocketService: WebsocketService
     ) { }
 
     ngOnInit(): void {
@@ -28,11 +22,8 @@ export class App implements OnInit {
 
     async login() {
         this.onConnection.set(true);
-
         await this.websocketService.init(this.authCode());
-
-        document.body.style.animation = 'backgroundAnimationSpeed 1s linear infinite';
-        this.pageState.set(PageState.LOGGING_IN);
+        this.onConnection.set(false);
     }
 
     public authCode = signal('');

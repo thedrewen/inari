@@ -106,7 +106,9 @@ impl Manager {
         let client = client_guard.get_mut(&id);
         if client.is_some() {
             let client = client.unwrap();
-            client.code = code;
+            client.code = code.clone();
+            
+            logger::log_info(format!("Client #{} has set their code to {}", client.get_id(), code));
         }
     }
 }

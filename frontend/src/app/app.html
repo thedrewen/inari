@@ -10,13 +10,25 @@
             Welcome on Inari, enter the code provided in the game to log in!
         </h2>
         <div class="input">
-            <input placeholder="XXXXXX" type="text">
+            <input [value]="authCode()" (change)="updateAuthCode($event.target.value)" placeholder="XXXXXX" type="text">
         </div>
         <div class="button">
-            <button [disabled]="on_connection()" (click)="login()">
+            <button [disabled]="onConnection()" (click)="login()">
                 Log in
             </button>
         </div>
+    </main>
+} @else if (pageState() == PageState.LOGGING_IN) {
+    <header>
+        <img class="logo" src="/assets/inari-inverted.svg" alt="inari-logo">
+        <h1>
+            Inari
+        </h1>
+    </header>
+    <main>
+        <h2>
+            Connecting to the server... Please wait...
+        </h2>
     </main>
 }
 

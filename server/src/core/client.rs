@@ -7,7 +7,8 @@ use crate::core::responses::WsResponses;
 pub struct Client {
     id: usize,
     mpsc_tx: UnboundedSender<Message>,
-    connected: bool
+    connected: bool,
+    pub code: String
 }
 
 impl Client {
@@ -15,7 +16,8 @@ impl Client {
         Self {
             id,
             mpsc_tx,
-            connected: false
+            connected: false,
+            code: String::new()
         }
     }
 

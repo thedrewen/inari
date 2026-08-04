@@ -1,7 +1,7 @@
 use futures_util::{SinkExt, StreamExt};
 use warp::filters::ws::WebSocket;
 
-use crate::core::{client::Client, manager::Manager, requests::WsRequests};
+use crate::core::{client::Client, manager::Manager, requests::{WsRequests, WsRequestsKind}};
 
 pub async fn handle_client(ws: WebSocket, manager: Manager, id: usize) {
     let (mut tx, mut rx) = ws.split();
@@ -18,6 +18,8 @@ pub async fn handle_client(ws: WebSocket, manager: Manager, id: usize) {
     });
 
     while let Some(result) = rx.next().await {
+        println!("{:?}", result);
+
         match result {
             Ok(msg) => {
                 let value = msg.to_str();
@@ -32,12 +34,14 @@ pub async fn handle_client(ws: WebSocket, manager: Manager, id: usize) {
                 let value: WsRequests = value.unwrap();
 
                 match value.kind {
-                    
+                    WsRequestsKind::Link { code } => {
+                        
+                    }
                 }
             },
             Err(_) => break
         }
     }
-
+    
     manager.disconnect_client(id).await;
 }

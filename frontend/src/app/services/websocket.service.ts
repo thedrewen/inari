@@ -10,7 +10,7 @@ export class WebsocketService {
     // Internal
     private ws!: WebSocket;
 
-    async init() {
+    async init(authCode: string) {
         this.ws = new WebSocket(this.urlService.wsUrl);
     }
 }

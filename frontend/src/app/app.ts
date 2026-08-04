@@ -2,7 +2,8 @@ import { Component, signal } from '@angular/core';
 import { WebsocketService } from './services/websocket.service';
 
 enum PageState {
-    WAIT_FOR_CODE = 0
+    WAIT_FOR_CODE = 0,
+    LOGGING_IN = 1
 }
 
 @Component({
@@ -19,11 +20,19 @@ export class App {
         private readonly websocketService: WebsocketService
     ) { }
 
-    public on_connection = signal(false);
+    public onConnection = signal(false);
 
     async login() {
-        this.on_connection.set(true);
+        this.onConnection.set(true);
 
-        await this.websocketService.init();
+        await this.websocketService.init(this.authCode());
+
+        this.pageState.set(PageState.LOGGING_IN);
+    }
+
+    public authCode = signal('');
+
+    updateAuthCode(value: string) {
+        this.authCode.set(value);
     }
 }

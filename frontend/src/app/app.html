@@ -13,7 +13,7 @@
             <input placeholder="XXXXXX" type="text">
         </div>
         <div class="button">
-            <button>
+            <button [disabled]="on_connection()" (click)="login()">
                 Log in
             </button>
         </div>

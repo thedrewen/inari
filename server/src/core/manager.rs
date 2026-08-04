@@ -23,13 +23,18 @@ impl Manager {
             .await
             .unwrap();
 
+        let port: u16 = env::var("WEBRTC_SERVER_PORT")
+            .ok()
+            .and_then(|v| v.parse().ok())
+            .unwrap_or(44444);
+
         let listen_info = ListenInfo {
             protocol: mediasoup::types::data_structures::Protocol::Udp,
             ip: std::net::IpAddr::V4(Ipv4Addr::UNSPECIFIED),
             announced_address: Some(
                 env::var("SERVER_PUBLIC_IP").unwrap_or(String::from("127.0.0.1")),
             ),
-            port: Some(44444),
+            port: Some(port),
             port_range: None,
             expose_internal_ip: false,
             flags: None,
@@ -44,7 +49,7 @@ impl Manager {
             .await
             .unwrap();
 
-        logger::log_info(format!("Webrtc Server running on :44444"));
+        logger::log_info(format!("Webrtc Server running on : {}", port));
 
         let audio_codec = RtpCodecCapability::Audio {
             mime_type: MimeTypeAudio::Opus,

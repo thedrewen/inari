@@ -1,4 +1,4 @@
-import { Component, signal } from '@angular/core';
+import { Component, OnInit, signal } from '@angular/core';
 import { WebsocketService } from './services/websocket.service';
 
 enum PageState {
@@ -12,13 +12,17 @@ enum PageState {
     templateUrl: './app.html',
     styleUrl: './app.scss'
 })
-export class App {
+export class App implements OnInit {
     public pageState = signal<PageState>(PageState.WAIT_FOR_CODE);
     public PageState = PageState;
 
     constructor (
         private readonly websocketService: WebsocketService
     ) { }
+
+    ngOnInit(): void {
+        document.body.style.animationDuration = '20s';
+    }
 
     public onConnection = signal(false);
 
@@ -27,6 +31,7 @@ export class App {
 
         await this.websocketService.init(this.authCode());
 
+        document.body.style.animation = 'backgroundAnimationSpeed 1s linear infinite';
         this.pageState.set(PageState.LOGGING_IN);
     }
 

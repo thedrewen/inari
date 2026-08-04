@@ -32,7 +32,7 @@ export class WebsocketService {
             }
 
             this.ws.onclose = () => {
-                document.body.style.animation = 'backgroundAnimation 1s linear infinite';
+                document.body.style.animation = 'backgroundAnimation 20s linear infinite';
                 this.pageState.set(PageState.WAIT_FOR_CODE);
                 res(null);
             }

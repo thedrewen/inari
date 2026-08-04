@@ -14,9 +14,7 @@ export class App implements OnInit {
         public readonly websocketService: WebsocketService
     ) { }
 
-    ngOnInit(): void {
-        document.body.style.animationDuration = '20s';
-    }
+    ngOnInit(): void {}
 
     public onConnection = signal(false);
 

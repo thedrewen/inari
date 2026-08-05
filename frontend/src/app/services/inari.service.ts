@@ -136,8 +136,6 @@ export class InariService {
                     this.track = media.getTracks()[0];
                     this.producer = await this.producer_transport.produce({ track: this.track });
                     this.producer.resume();
-
-
                 }
             }
         });
@@ -165,7 +163,7 @@ export class InariService {
 
                 const consumer = await this.consumers_transport.consume({ id: consumer_id, producerId: producer_id, kind, rtpParameters: rtp_parameters });
                 if (is_init) {
-                    consumer.pause();
+                    // consumer.pause();
                 } else {
                     consumer.resume();
                 }

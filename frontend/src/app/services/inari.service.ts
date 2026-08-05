@@ -188,6 +188,9 @@ export class InariService {
 
     async disconnect() {
         this.ws.close();
+        if (this.pingInterval) {
+            clearInterval(this.pingInterval);
+        }
         this.promises_ws.forEach((v) => v.res(null));
         this.promises_ws = [];
         this.clients.forEach((c) => {

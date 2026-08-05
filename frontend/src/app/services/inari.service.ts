@@ -8,7 +8,7 @@ enum PageState {
 }
 
 @Service()
-export class WebsocketService {
+export class InariService {
 
     // Injects
     private readonly urlService = inject(UrlService);

@@ -6,7 +6,7 @@ use mediasoup::{
 use tokio::sync::RwLock;
 use uuid::Uuid;
 
-use crate::{core::{client::{self, Client}, responses::WsResponses}, logger};
+use crate::{core::{client::{Client}, responses::WsResponses}, logger};
 
 #[derive(Clone)]
 pub struct Manager {
@@ -107,6 +107,7 @@ impl Manager {
         if client.is_some() {
             let client = client.unwrap();
             client.code = code.clone();
+            client.set_connected();
             
             logger::log_info(format!("Client #{} has set their code to {}", client.get_id(), code));
         }

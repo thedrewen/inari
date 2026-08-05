@@ -1,5 +1,5 @@
 import { Component, OnInit, signal } from '@angular/core';
-import { WebsocketService } from './services/websocket.service';
+import { InariService } from './services/inari.service';
 
 
 @Component({
@@ -11,7 +11,7 @@ import { WebsocketService } from './services/websocket.service';
 export class App implements OnInit {
 
     constructor (
-        public readonly websocketService: WebsocketService
+        public readonly is: InariService
     ) { }
 
     ngOnInit(): void {}
@@ -20,7 +20,7 @@ export class App implements OnInit {
 
     async login() {
         this.onConnection.set(true);
-        await this.websocketService.init(this.authCode());
+        await this.is.init(this.authCode());
         this.onConnection.set(false);
     }
 

@@ -1,4 +1,4 @@
-@if (websocketService.pageState() == websocketService.PageState.WAIT_FOR_CODE) {
+@if (is.pageState() == is.PageState.WAIT_FOR_CODE) {
     <header>
         <img class="logo" src="/assets/inari-inverted.svg" alt="inari-logo">
         <h1>
@@ -18,7 +18,7 @@
             </button>
         </div>
     </main>
-} @else if (websocketService.pageState() == websocketService.PageState.LOGGING_IN) {
+} @else if (is.pageState() == is.PageState.LOGGING_IN) {
     <header>
         <img class="logo" src="/assets/inari-inverted.svg" alt="inari-logo">
         <h1>

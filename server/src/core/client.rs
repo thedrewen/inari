@@ -25,6 +25,10 @@ impl Client {
         self.connected
     }
 
+    pub fn set_connected(&mut self) {
+        self.connected = true;
+    }
+
     pub fn get_id(&self) -> usize {
         self.id
     }

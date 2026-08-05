@@ -30,6 +30,18 @@
             Connecting to the server... Please wait...
         </h2>
     </main>
+} @else if (is.pageState() == is.PageState.CONNECTED) {
+    <header>
+        <img class="logo" src="/assets/inari-inverted.svg" alt="inari-logo">
+        <h1>
+            Inari
+        </h1>
+    </header>
+    <main>
+        <h2>
+            You are logged in to Inari! Number of users logged in: {{is.clients_count()}}
+        </h2>
+    </main>
 }
 
 

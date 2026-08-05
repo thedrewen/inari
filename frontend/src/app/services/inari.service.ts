@@ -6,7 +6,8 @@ import { Consumer, Producer, RtpCapabilities, Transport } from 'mediasoup-client
 
 enum PageState {
     WAIT_FOR_CODE = 0,
-    LOGGING_IN = 1
+    LOGGING_IN = 1,
+    CONNECTED = 2
 }
 
 type Client = { producer_id: string, consumer?: Consumer, stream?: MediaStream, audio?: HTMLAudioElement };
@@ -32,7 +33,7 @@ export class InariService {
     private pingInterval: any = null;
 
     private clients: Client[] = [];
-    private clients_count = signal(1);
+    public clients_count = signal(1);
 
     private promises_ws: { uuid: string, res: any }[] = [];
 
@@ -55,10 +56,7 @@ export class InariService {
             }
 
             this.ws.onclose = () => {
-                document.body.style.animation = 'backgroundAnimation 20s linear infinite';
-                this.pageState.set(PageState.WAIT_FOR_CODE);
-                this.promises_ws.forEach((v) => v.res(false));
-                this.promises_ws = [];
+                this.disconnect();
                 res(null);
             }
 
@@ -104,7 +102,7 @@ export class InariService {
                         });
 
                         const clients: any = await this.send_and_receive('fetch_clients', {});
-                        clients.ids.forEach((c: string) => this.add_client(c));
+                        clients.ids.forEach((c: string) => this.add_client(c, true));
                     });
 
 
@@ -132,9 +130,14 @@ export class InariService {
                     const media = await navigator.mediaDevices.getUserMedia({ audio: true }).catch(() => this.disconnect());
 
                     if (!media) return;
+                    this.pageState.set(PageState.CONNECTED);
+                    document.body.style.animation = 'backgroundAnimation 20s linear infinite';
+                    this.clients.forEach((c) => c.consumer?.resume());
                     this.track = media.getTracks()[0];
                     this.producer = await this.producer_transport.produce({ track: this.track });
                     this.producer.resume();
+
+
                 }
             }
         });
@@ -149,7 +152,7 @@ export class InariService {
         }
     }
 
-    async add_client(producer_id: string) {
+    async add_client(producer_id: string, is_init: boolean = false) {
         if (!this.clients.some((v) => v.producer_id == producer_id)) {
             const client: Client = { producer_id };
             this.clients.push(client);
@@ -161,7 +164,11 @@ export class InariService {
                 let { consumer_id, kind, rtp_parameters } = value;
 
                 const consumer = await this.consumers_transport.consume({ id: consumer_id, producerId: producer_id, kind, rtpParameters: rtp_parameters });
-                consumer.resume();
+                if (is_init) {
+                    consumer.pause();
+                } else {
+                    consumer.resume();
+                }
                 client.consumer = consumer;
 
                 const stream = new MediaStream();
@@ -191,8 +198,10 @@ export class InariService {
         });
     }
 
-    async disconnect() {
+    async disconnect(by_ws: boolean = false) {
+
         this.ws.close();
+        document.body.style.animation = 'backgroundAnimation 20s linear infinite';
         if (this.pingInterval) {
             clearInterval(this.pingInterval);
         }

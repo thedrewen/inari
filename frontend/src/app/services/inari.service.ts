@@ -80,8 +80,8 @@ export class InariService {
                         client.stream?.getTracks().forEach((t) => t.stop());
                         client.audio?.remove();
                     }
-                    this.clients_count.update(() => this.clients.length + 1);
                     this.clients = this.clients.filter((c) => c.producer_id !== data.data.id);
+                    this.clients_count.update(() => this.clients.length + 1);
                 } else if (data.kind == 'rtp_capabilities') {
                     this.routerRtpCapabilities = data.data.rtp_capabilities;
                     await this.device.load({ routerRtpCapabilities: this.routerRtpCapabilities });

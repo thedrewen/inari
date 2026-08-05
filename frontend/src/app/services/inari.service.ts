@@ -9,7 +9,7 @@ enum PageState {
     LOGGING_IN = 1
 }
 
-type Client = {producer_id: string, consumer?: Consumer, stream?: MediaStream, audio?: HTMLAudioElement};
+type Client = { producer_id: string, consumer?: Consumer, stream?: MediaStream, audio?: HTMLAudioElement };
 
 @Service()
 export class InariService {
@@ -78,7 +78,7 @@ export class InariService {
                 } else if (data.kind == 'rtp_capabilities') {
                     this.routerRtpCapabilities = data.data.rtp_capabilities;
                     await this.device.load({ routerRtpCapabilities: this.routerRtpCapabilities });
-                    const result: any = await this.send_and_receive('create_transport', {is_producer: true});
+                    const result: any = await this.send_and_receive('create_transport', { is_producer: true });
 
 
                     this.send_and_receive('create_transport', { is_producer: false }).then(async (result: any) => {
@@ -103,7 +103,7 @@ export class InariService {
                     this.producer_transport = this.device.createSendTransport({ id, iceParameters: ice_parameters, dtlsParameters: dtls_parameters, iceCandidates: ice_candidates });
 
                     this.producer_transport.on('connect', async ({ dtlsParameters }, callback, errback) => {
-                        let result = await this.send_and_receive('connect_transport', { is_producer: false, dtls_parameters: dtlsParameters });
+                        let result = await this.send_and_receive('connect_transport', { is_producer: true, dtls_parameters: dtlsParameters });
                         if (result) {
                             callback();
                         } else {
@@ -125,6 +125,7 @@ export class InariService {
                     if (!media) return;
                     this.track = media.getTracks()[0];
                     this.producer = await this.producer_transport.produce({ track: this.track });
+                    this.producer.resume();
                 }
             }
         });
@@ -141,17 +142,18 @@ export class InariService {
 
     async add_client(producer_id: string) {
         if (!this.clients.some((v) => v.producer_id == producer_id)) {
-            const client: Client = {producer_id};
+            const client: Client = { producer_id };
             this.clients.push(client);
 
             let value: any = await this.send_and_receive('consume', { producer_id: producer_id, rtp_capabilities: this.device.recvRtpCapabilities });
 
             if (value) {
                 let { consumer_id, kind, rtp_parameters } = value;
-                
+
                 const consumer = await this.consumers_transport.consume({ id: consumer_id, producerId: producer_id, kind, rtpParameters: rtp_parameters });
+                consumer.resume();
                 client.consumer = consumer;
-                
+
                 const stream = new MediaStream();
                 stream.addTrack(consumer.track);
 

@@ -50,6 +50,15 @@ pub async fn handle_client(ws: WebSocket, manager: Manager, id: usize) {
                         if result.is_none() {
                             break;
                         }
+                    },
+                    WsRequestsKind::FetchClients {  } => {
+                        manager.send_producers_ids(id, value.transaction_uuid.clone()).await;
+                    },
+                    WsRequestsKind::Consume { producer_id, rtp_capabilities } => {
+                        let result = manager.consume(id, producer_id, rtp_capabilities, value.transaction_uuid.clone()).await;
+                        if result.is_none() {
+                            break;
+                        }
                     }
                 }
             },

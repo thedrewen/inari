@@ -2,7 +2,7 @@ import { createPlatform, inject, Service, signal } from '@angular/core';
 import { UrlService } from './url.service';
 import { v4 as uuidv4 } from 'uuid';
 import { Device } from 'mediasoup-client';
-import { Producer, RtpCapabilities, Transport } from 'mediasoup-client/types';
+import { Consumer, Producer, RtpCapabilities, Transport } from 'mediasoup-client/types';
 
 enum PageState {
     WAIT_FOR_CODE = 0,
@@ -25,6 +25,8 @@ export class InariService {
     private producer_transport!: Transport;
     private producer!: Producer;
     private consumers_transport!: Transport;
+
+    private clients: {producer_id: string, consumer?: Consumer}[] = [];
 
     private promises_ws: { uuid: string, res: any }[] = [];
 
@@ -59,13 +61,24 @@ export class InariService {
                 if (promise) {
                     promise.res(data.data);
                     this.promises_ws = this.promises_ws.filter((v) => v.uuid != data.transaction_uuid);
+                    return;
                 }
 
-                if (data.kind == 'rtp_capabilities') {
+                if (data.kind == 'add_clients') {
+                    data.data.ids.forEach((c: string) => this.add_client(c));
+                } else if (data.kind == 'remove_client') {
+                    const client = this.clients.find((c) => c.producer_id == data.data.id);
+                    if (client) {
+                        client.consumer?.close();
+                    }
+                    this.clients = this.clients.filter((c) => c.producer_id !== data.data.id);
+                } else if (data.kind == 'rtp_capabilities') {
                     this.routerRtpCapabilities = data.data.rtp_capabilities;
                     await this.device.load({ routerRtpCapabilities: this.routerRtpCapabilities });
                     const result: any = await this.send_and_receive('create_transport', {is_producer: true});
-                    this.send_and_receive('create_transport', { is_producer: false }).then((result: any) => {
+
+
+                    this.send_and_receive('create_transport', { is_producer: false }).then(async (result: any) => {
                         const { id, dtls_parameters, ice_candidates, ice_parameters } = result;
 
                         this.consumers_transport = this.device.createRecvTransport({ id, iceParameters: ice_parameters, dtlsParameters: dtls_parameters, iceCandidates: ice_candidates });
@@ -77,7 +90,12 @@ export class InariService {
                                 errback(Error());
                             }
                         });
+
+                        const clients: any = await this.send_and_receive('fetch_clients', {});
+                        clients.ids.forEach((c: string) => this.add_client(c));
                     });
+
+
                     const { id, dtls_parameters, ice_candidates, ice_parameters } = result;
                     this.producer_transport = this.device.createSendTransport({ id, iceParameters: ice_parameters, dtlsParameters: dtls_parameters, iceCandidates: ice_candidates });
 
@@ -118,6 +136,19 @@ export class InariService {
         }
     }
 
+    async add_client(producer_id: string) {
+        if (!this.clients.some((v) => v.producer_id == producer_id)) {
+            this.clients.push({producer_id});
+
+            let value: any = await this.send_and_receive('consume', { producer_id: producer_id, rtp_capabilities: this.device.recvRtpCapabilities });
+
+            if (value) {
+                let { consumer_id, kind, rtp_parameters } = value;
+                console.log(value);
+            }
+        }
+    }
+
     async send_and_receive(kind: string, data: any) {
         let uuid = uuidv4()
         try {
@@ -136,6 +167,8 @@ export class InariService {
         this.ws.close();
         this.promises_ws.forEach((v) => v.res(null));
         this.promises_ws = [];
+        this.clients.forEach((c) => c.consumer?.close());
+        this.clients = [];
         this.producer?.close();
         this.producer_transport?.close();
         this.consumers_transport?.close();

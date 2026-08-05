@@ -1,4 +1,4 @@
-use mediasoup::{producer::ProducerId, transport::TransportId, types::{data_structures::{DtlsParameters, IceCandidate, IceParameters}, rtp_parameters::RtpCapabilitiesFinalized}};
+use mediasoup::{consumer::ConsumerId, producer::ProducerId, transport::TransportId, types::{data_structures::{DtlsParameters, IceCandidate, IceParameters}, rtp_parameters::{MediaKind, RtpCapabilitiesFinalized, RtpParameters}}};
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -9,7 +9,8 @@ pub enum WsResponsesKind {
     ConnectTransport {},
     Produce { id: ProducerId },
     AddClients { ids: Vec<ProducerId> },
-    RemoveClient { id: ProducerId }
+    RemoveClient { id: ProducerId },
+    Consume { consumer_id: ConsumerId, kind: MediaKind, rtp_parameters: RtpParameters }
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]

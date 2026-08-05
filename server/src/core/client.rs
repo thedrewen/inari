@@ -1,14 +1,15 @@
+use std::{collections::HashMap};
+
 use mediasoup::{
-    producer::{Producer, ProducerId, ProducerOptions}, transport::Transport, types::{
-        data_structures::DtlsParameters,
-        rtp_parameters::{MediaKind, RtpParameters},
+    consumer::{Consumer, ConsumerOptions}, producer::{Producer, ProducerId, ProducerOptions}, transport::Transport, types::{
+        data_structures::DtlsParameters, rtp_parameters::{MediaKind, RtpCapabilities, RtpParameters},
     }, webrtc_transport::{WebRtcTransport, WebRtcTransportRemoteParameters},
 };
 use tokio::sync::mpsc::UnboundedSender;
 use warp::filters::ws::Message;
 
 use crate::core::responses::{
-    WsResponses, WsResponsesKind::{ConnectTransport, CreateTransport, Produce},
+    WsResponses, WsResponsesKind::{ConnectTransport, Consume, CreateTransport, Produce},
 };
 
 #[derive(Clone)]
@@ -22,6 +23,7 @@ pub struct Client {
     producer_id: Option<ProducerId>,
     producer_transport: Option<WebRtcTransport>,
     consumers_transport: Option<WebRtcTransport>,
+    consumers: HashMap<ProducerId, Consumer>
 }
 
 impl Client {
@@ -35,7 +37,8 @@ impl Client {
             producer: None,
             producer_id: None,
             producer_transport: None,
-            consumers_transport: None
+            consumers_transport: None,
+            consumers: HashMap::new()
         }
     }
 
@@ -52,7 +55,7 @@ impl Client {
     }
 
     pub fn get_producer_id(&self) -> Option<ProducerId> {
-        self.producer_id
+        self.producer_id.clone()
     }
 
     pub fn send(&self, response: WsResponses) {
@@ -126,6 +129,7 @@ impl Client {
                 return None;
             }
             let producer = result.unwrap();
+            let _ = producer.resume().await;
 
             self.send(WsResponses {
                 kind: Produce { id: producer.id() },
@@ -137,5 +141,20 @@ impl Client {
             return self.producer.clone();
         }
         None
+    }
+
+    pub async fn consume(&mut self, producer_id: ProducerId, rtp_capabilities: RtpCapabilities, transaction_uuid: String) -> Option<Consumer>  {
+        if let Some(transport) = &self.consumers_transport {
+            let consumer = transport.consume(ConsumerOptions::new(producer_id, rtp_capabilities)).await.unwrap();
+            self.consumers.insert(producer_id, consumer.clone());
+            let _ = consumer.resume().await;
+            self.send(WsResponses { kind: Consume { consumer_id: consumer.id().clone(), kind: consumer.kind().clone(), rtp_parameters: consumer.rtp_parameters().clone() }, transaction_uuid });
+            return Some(consumer);
+        }
+        None
+    }
+
+    pub fn remove_consumer(&mut self, producer_id: ProducerId) {
+        self.consumers.remove(&producer_id);
     }
 }

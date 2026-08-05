@@ -36,6 +36,12 @@ pub async fn handle_client(ws: WebSocket, manager: Manager, id: usize) {
                 match value.kind {
                     WsRequestsKind::Link { code } => {
                         manager.set_code(id, code).await;
+                    },
+                    WsRequestsKind::CreateProducerTransport {  } => {
+                        let result = manager.create_producer_transport(id, value.transaction_uuid.clone()).await;
+                        if result.is_none() {
+                            break;
+                        }
                     }
                 }
             },

@@ -1,7 +1,7 @@
 use std::{collections::HashMap, env, net::Ipv4Addr, num::{NonZeroU8, NonZeroU32}, sync::Arc};
 
 use mediasoup::{
-    router::{Router, RouterOptions}, types::{data_structures::ListenInfo, rtp_parameters::{MimeTypeAudio, RtpCodecCapability, RtpCodecParametersParameters}}, webrtc_server::{WebRtcServer, WebRtcServerListenInfos, WebRtcServerOptions}, worker::WorkerSettings, worker_manager::WorkerManager,
+    router::{Router, RouterOptions}, types::{data_structures::ListenInfo, rtp_parameters::{MimeTypeAudio, RtpCodecCapability, RtpCodecParametersParameters}}, webrtc_server::{WebRtcServer, WebRtcServerListenInfos, WebRtcServerOptions}, webrtc_transport::{WebRtcTransport, WebRtcTransportOptions}, worker::WorkerSettings, worker_manager::WorkerManager,
 };
 use tokio::sync::RwLock;
 use uuid::Uuid;
@@ -12,7 +12,9 @@ use crate::{core::{client::{Client}, responses::WsResponses}, logger};
 pub struct Manager {
     clients: Arc<RwLock<HashMap<usize, Client>>>,
     router: Router,
-    _webrtc_server: WebRtcServer
+    webrtc_server: WebRtcServer,
+
+    
 }
 
 impl Manager {
@@ -68,7 +70,7 @@ impl Manager {
 
         Self {
             clients: Arc::new(RwLock::new(HashMap::new())),
-            _webrtc_server: webrtc_server,
+            webrtc_server: webrtc_server,
             router
         }
     }
@@ -93,17 +95,24 @@ impl Manager {
         self.clients.write().await.insert(id, client);
     }
 
-    pub async fn disconnect_client(&self, id: usize) {
-        self.clients.write().await.remove(&id);
-        logger::log_info(format!("User #{id} has logged out."));
+    pub async fn disconnect_client(&self, user_id: usize) {
+        self.clients.write().await.remove(&user_id);
+        logger::log_info(format!("User #{user_id} has logged out."));
+    }
+
+    pub async fn client_is_connected(&self, user_id: usize) -> bool {
+        let client_guard = self.clients.read().await;
+        if let Some(client) = client_guard.get(&user_id) {
+            return client.is_connected();
+        }
+        false
     }
 
 
-
     
-    pub async fn set_code(&self, id: usize, code: String) {
+    pub async fn set_code(&self, user_id: usize, code: String) {
         let mut client_guard = self.clients.write().await;
-        let client = client_guard.get_mut(&id);
+        let client = client_guard.get_mut(&user_id);
         if client.is_some() {
             let client = client.unwrap();
             client.code = code.clone();
@@ -111,5 +120,22 @@ impl Manager {
             
             logger::log_info(format!("Client #{} has set their code to {}", client.get_id(), code));
         }
+    }
+
+    pub async fn create_producer_transport(&self, user_id: usize, transaction_uuid: String) -> Option<WebRtcTransport> {
+        if self.client_is_connected(user_id).await {
+            let options = WebRtcTransportOptions::new_with_server(self.webrtc_server.clone());
+            let transport = self.router.create_webrtc_transport(options).await.unwrap();
+
+            let mut users_guard = self.clients.write().await;
+            let user = users_guard.get_mut(&user_id);
+            if user.is_none() {
+                return None;
+            }
+            let user = user.unwrap();
+            user.set_producer_transport(transport.clone(), transaction_uuid);
+            return Some(transport);
+        }
+        return None;
     }
 }

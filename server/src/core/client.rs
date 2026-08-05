@@ -1,14 +1,18 @@
+use mediasoup::{producer::Producer, transport::Transport, webrtc_transport::WebRtcTransport};
 use tokio::sync::mpsc::UnboundedSender;
 use warp::filters::ws::Message;
 
-use crate::core::responses::WsResponses;
+use crate::core::responses::{WsResponses, WsResponsesKind::CreateProducerTransport};
 
 #[derive(Clone)]
 pub struct Client {
     id: usize,
     mpsc_tx: UnboundedSender<Message>,
     connected: bool,
-    pub code: String
+    pub code: String,
+
+    producer: Option<Producer>,
+    producer_transport: Option<WebRtcTransport>
 }
 
 impl Client {
@@ -17,7 +21,10 @@ impl Client {
             id,
             mpsc_tx,
             connected: false,
-            code: String::new()
+            code: String::new(),
+
+            producer: None,
+            producer_transport: None
         }
     }
 
@@ -37,6 +44,20 @@ impl Client {
         let _ = self.mpsc_tx.send(
             Message::text(
                 serde_json::to_string(&response).unwrap()
+            )
+        );
+    }
+
+    pub fn set_producer_transport(&mut self, transport: WebRtcTransport, transaction_uuid: String) {
+        self.producer_transport = Some(transport.clone());
+        let _ = self.mpsc_tx.send(
+            Message::text(
+                serde_json::to_string(
+                    &WsResponses {
+                        kind: CreateProducerTransport { id: transport.id(), ice_parameters: transport.ice_parameters().clone(), ice_candidates: transport.ice_candidates().clone(), dtls_parameters: transport.dtls_parameters() },
+                        transaction_uuid
+                    }
+                ).unwrap()
             )
         );
     }

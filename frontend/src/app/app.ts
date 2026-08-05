@@ -1,4 +1,4 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnDestroy, OnInit, signal } from '@angular/core';
 import { InariService } from './services/inari.service';
 
 
@@ -8,13 +8,16 @@ import { InariService } from './services/inari.service';
     templateUrl: './app.html',
     styleUrl: './app.scss'
 })
-export class App implements OnInit {
+export class App implements OnInit, OnDestroy {
 
     constructor (
         public readonly is: InariService
     ) { }
 
     ngOnInit(): void {}
+    ngOnDestroy(): void {
+        this.is.disconnect();
+    }
 
     public onConnection = signal(false);
 

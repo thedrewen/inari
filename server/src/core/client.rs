@@ -1,17 +1,14 @@
 use mediasoup::{
-    producer::{Producer, ProducerOptions},
-    transport::Transport,
-    types::{
+    producer::{Producer, ProducerId, ProducerOptions}, transport::Transport, types::{
         data_structures::DtlsParameters,
         rtp_parameters::{MediaKind, RtpParameters},
-    },
-    webrtc_transport::{WebRtcTransport, WebRtcTransportRemoteParameters},
+    }, webrtc_transport::{WebRtcTransport, WebRtcTransportRemoteParameters},
 };
 use tokio::sync::mpsc::UnboundedSender;
 use warp::filters::ws::Message;
 
 use crate::core::responses::{
-    WsResponses, WsResponsesKind::{ConnectProducerTransport, CreateProducerTransport, Produce},
+    WsResponses, WsResponsesKind::{ConnectTransport, CreateTransport, Produce},
 };
 
 #[derive(Clone)]
@@ -22,7 +19,9 @@ pub struct Client {
     pub code: String,
 
     producer: Option<Producer>,
+    producer_id: Option<ProducerId>,
     producer_transport: Option<WebRtcTransport>,
+    consumers_transport: Option<WebRtcTransport>,
 }
 
 impl Client {
@@ -34,7 +33,9 @@ impl Client {
             code: String::new(),
 
             producer: None,
+            producer_id: None,
             producer_transport: None,
+            consumers_transport: None
         }
     }
 
@@ -50,37 +51,63 @@ impl Client {
         self.id
     }
 
+    pub fn get_producer_id(&self) -> Option<ProducerId> {
+        self.producer_id
+    }
+
     pub fn send(&self, response: WsResponses) {
         let _ = self
             .mpsc_tx
             .send(Message::text(serde_json::to_string(&response).unwrap()));
     }
 
-    pub fn set_producer_transport(&mut self, transport: WebRtcTransport, transaction_uuid: String) {
-        self.producer_transport = Some(transport.clone());
+    pub fn set_transport(&mut self, is_producer: bool, transport: WebRtcTransport, transaction_uuid: String) {
+        
+        if self.producer_transport.is_none() && is_producer {
+            self.producer_transport = Some(transport.clone());
 
-        self.send(WsResponses {
-            kind: CreateProducerTransport {
-                id: transport.id(),
-                ice_parameters: transport.ice_parameters().clone(),
-                ice_candidates: transport.ice_candidates().clone(),
-                dtls_parameters: transport.dtls_parameters(),
-            },
-            transaction_uuid,
-        });
+            self.send(WsResponses {
+                kind: CreateTransport {
+                    id: transport.id(),
+                    ice_parameters: transport.ice_parameters().clone(),
+                    ice_candidates: transport.ice_candidates().clone(),
+                    dtls_parameters: transport.dtls_parameters(),
+                },
+                transaction_uuid,
+            });
+        } else if self.consumers_transport.is_none() {
+            self.consumers_transport = Some(transport.clone());
+            
+            self.send(WsResponses {
+                kind: CreateTransport {
+                    id: transport.id(),
+                    ice_parameters: transport.ice_parameters().clone(),
+                    ice_candidates: transport.ice_candidates().clone(),
+                    dtls_parameters: transport.dtls_parameters(),
+                },
+                transaction_uuid,
+            });
+        }
     }
 
-    pub async fn connect_producer_transport(
-        &mut self,
+    pub async fn connect_transport(
+        &mut self, 
+        is_producer: bool,
         dtls_parameters: DtlsParameters,
         transaction_uuid: String,
     ) {
-        if let Some(transport) = &self.producer_transport {
+        let transport = if is_producer {
+            &self.producer_transport
+        } else {
+            &self.consumers_transport
+        }; 
+        
+        if let Some(transport) = transport {
             let _ = transport
                 .connect(WebRtcTransportRemoteParameters { dtls_parameters })
                 .await;
 
-            self.send(WsResponses { kind: ConnectProducerTransport {  }, transaction_uuid });
+            self.send(WsResponses { kind: ConnectTransport {  }, transaction_uuid });
         }
     }
 
@@ -105,6 +132,7 @@ impl Client {
                 transaction_uuid,
             });
 
+            self.producer_id = Some(producer.id());
             self.producer = Some(producer);
             return self.producer.clone();
         }

@@ -5,8 +5,8 @@ use serde::{Deserialize, Serialize};
 #[serde( tag = "kind", content = "data", rename_all = "snake_case" )]
 pub enum WsRequestsKind {
     Link { code: String },
-    CreateProducerTransport { },
-    ConnectProducerTransport { dtls_parameters: DtlsParameters },
+    CreateTransport { is_producer: bool },
+    ConnectTransport { is_producer: bool, dtls_parameters: DtlsParameters },
     Produce { kind: MediaKind, rtp_parameters: RtpParameters }
 }
 

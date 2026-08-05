@@ -24,8 +24,9 @@ export class InariService {
     private routerRtpCapabilities!: RtpCapabilities;
     private producer_transport!: Transport;
     private producer!: Producer;
+    private consumers_transport!: Transport;
 
-    private promises_ws: {uuid: string, res: any}[] = [];
+    private promises_ws: { uuid: string, res: any }[] = [];
 
     async init(authCode: string) {
         return new Promise((res) => {
@@ -36,7 +37,7 @@ export class InariService {
 
             this.ws.onopen = async () => {
                 console.log('Connected to inari ws !');
-                await this.send('link', {code: authCode});
+                await this.send('link', { code: authCode });
 
                 this.device = new Device();
                 res(null);
@@ -54,7 +55,7 @@ export class InariService {
                 const data = JSON.parse(message.data);
 
                 let promise = this.promises_ws.find((v) => v.uuid == data.transaction_uuid);
-                
+
                 if (promise) {
                     promise.res(data.data);
                     this.promises_ws = this.promises_ws.filter((v) => v.uuid != data.transaction_uuid);
@@ -63,12 +64,25 @@ export class InariService {
                 if (data.kind == 'rtp_capabilities') {
                     this.routerRtpCapabilities = data.data.rtp_capabilities;
                     await this.device.load({ routerRtpCapabilities: this.routerRtpCapabilities });
-                    const result: any = await this.send_and_receive('create_producer_transport', {});
-                    const { id, dtls_parameters, ice_candidates, ice_parameters } = result; 
+                    const result: any = await this.send_and_receive('create_transport', {is_producer: true});
+                    this.send_and_receive('create_transport', { is_producer: false }).then((result: any) => {
+                        const { id, dtls_parameters, ice_candidates, ice_parameters } = result;
+
+                        this.consumers_transport = this.device.createRecvTransport({ id, iceParameters: ice_parameters, dtlsParameters: dtls_parameters, iceCandidates: ice_candidates });
+                        this.consumers_transport.on('connect', async ({ dtlsParameters }, callback, errback) => {
+                            let result = await this.send_and_receive('connect_transport', { is_producer: false, dtls_parameters: dtlsParameters });
+                            if (result) {
+                                callback();
+                            } else {
+                                errback(Error());
+                            }
+                        });
+                    });
+                    const { id, dtls_parameters, ice_candidates, ice_parameters } = result;
                     this.producer_transport = this.device.createSendTransport({ id, iceParameters: ice_parameters, dtlsParameters: dtls_parameters, iceCandidates: ice_candidates });
-                    
+
                     this.producer_transport.on('connect', async ({ dtlsParameters }, callback, errback) => {
-                        let result = await this.send_and_receive('connect_producer_transport', { dtls_parameters: dtlsParameters });
+                        let result = await this.send_and_receive('connect_transport', { is_producer: false, dtls_parameters: dtlsParameters });
                         if (result) {
                             callback();
                         } else {
@@ -83,34 +97,48 @@ export class InariService {
                         } else {
                             errback(Error());
                         }
-                    }); 
+                    });
 
-                    const media = await navigator.mediaDevices.getUserMedia({audio: true}).catch(() => this.disconnect());
-                    
+                    const media = await navigator.mediaDevices.getUserMedia({ audio: true }).catch(() => this.disconnect());
+
                     if (!media) return;
-                    
+
                     this.producer = await this.producer_transport.produce({ track: media.getTracks()[0] });
-                } 
-            } 
+                }
+            }
         });
     }
 
     async send(kind: string, data: any) {
-        let uuid = uuidv4()
-        this.ws.send(JSON.stringify({kind, data, transaction_uuid: uuid}));
+        try {
+            let uuid = uuidv4()
+            this.ws.send(JSON.stringify({ kind, data, transaction_uuid: uuid }));
+        } catch (error) {
+            await this.disconnect();
+        }
     }
 
     async send_and_receive(kind: string, data: any) {
         let uuid = uuidv4()
-        this.ws.send(JSON.stringify({kind, data, transaction_uuid: uuid}));
+        try {
+            this.ws.send(JSON.stringify({ kind, data, transaction_uuid: uuid }));
+        } catch (error) {
+            await this.disconnect();
+            return null;
+        }
 
         return new Promise((res) => {
-            this.promises_ws.push({uuid, res});
+            this.promises_ws.push({ uuid, res });
         });
     }
 
     async disconnect() {
         this.ws.close();
+        this.promises_ws.forEach((v) => v.res(null));
+        this.promises_ws = [];
+        this.producer?.close();
+        this.producer_transport?.close();
+        this.consumers_transport?.close();
         this.pageState.set(PageState.WAIT_FOR_CODE);
     }
 }

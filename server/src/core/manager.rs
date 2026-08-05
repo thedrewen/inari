@@ -6,7 +6,7 @@ use mediasoup::{
 use tokio::sync::RwLock;
 use uuid::Uuid;
 
-use crate::{core::{client::{Client}, responses::WsResponses}, logger};
+use crate::{core::{client::Client, responses::{WsResponses, WsResponsesKind::{AddClients, RemoveClient}}}, logger};
 
 #[derive(Clone)]
 pub struct Manager {
@@ -96,6 +96,16 @@ impl Manager {
     }
 
     pub async fn disconnect_client(&self, user_id: usize) {
+
+        let producer_id = self.clients.read().await.get(&user_id).and_then(|c| c.get_producer_id());
+        if let Some(producer_id) = producer_id {
+            for client in self.clients.read().await.values() {
+                if client.get_id() != user_id {
+                    client.send(WsResponses { kind: RemoveClient { id: producer_id }, transaction_uuid: Uuid::new_v4().to_string() });
+                }
+            }
+        }
+
         self.clients.write().await.remove(&user_id);
         logger::log_info(format!("User #{user_id} has logged out."));
     }
@@ -122,7 +132,7 @@ impl Manager {
         }
     }
 
-    pub async fn create_producer_transport(&self, user_id: usize, transaction_uuid: String) -> Option<WebRtcTransport> {
+    pub async fn create_transport(&self, user_id: usize, is_producer: bool, transaction_uuid: String) -> Option<WebRtcTransport> {
         if self.client_is_connected(user_id).await {
             let options = WebRtcTransportOptions::new_with_server(self.webrtc_server.clone());
             let transport = self.router.create_webrtc_transport(options).await.unwrap();
@@ -133,13 +143,13 @@ impl Manager {
                 return None;
             }
             let user = user.unwrap();
-            user.set_producer_transport(transport.clone(), transaction_uuid);
+            user.set_transport(is_producer, transport.clone(), transaction_uuid);
             return Some(transport);
         }
         return None;
     }
 
-    pub async fn connect_producer_transport(&self, user_id: usize, dtls_parameters: DtlsParameters, transaction_uuid: String) {
+    pub async fn connect_transport(&self, user_id: usize, is_producer: bool, dtls_parameters: DtlsParameters, transaction_uuid: String) {
         if self.client_is_connected(user_id).await {
             let mut users_guard = self.clients.write().await;
             let user = users_guard.get_mut(&user_id);
@@ -147,7 +157,7 @@ impl Manager {
                 return;
             }
             let user = user.unwrap();
-            user.connect_producer_transport(dtls_parameters, transaction_uuid).await;
+            user.connect_transport(is_producer, dtls_parameters, transaction_uuid).await;
         }
     }
 
@@ -159,7 +169,23 @@ impl Manager {
                 return None;
             }
             let user = user.unwrap();
-            return user.produce(kind, rtp_parameters, transaction_uuid).await;
+            let producer = user.produce(kind, rtp_parameters, transaction_uuid).await;
+            drop(users_guard);
+            let producer_clone = producer.clone();
+            if producer.is_some() {
+                let producer_id = producer.unwrap().id();
+                let clients_copy = self.clients.read().await.clone();
+
+                tokio::spawn(async move {
+                    for client in clients_copy.values() {
+                        if client.get_id() != user_id {
+                            let uuid = Uuid::new_v4().to_string();
+                            client.send(WsResponses { kind: AddClients { ids: vec![producer_id] }, transaction_uuid: uuid });
+                        }
+                    }
+                });
+            }
+            return producer_clone;
         }
 
         return None;

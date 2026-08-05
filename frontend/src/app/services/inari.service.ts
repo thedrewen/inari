@@ -9,6 +9,8 @@ enum PageState {
     LOGGING_IN = 1
 }
 
+type Client = {producer_id: string, consumer?: Consumer, stream?: MediaStream, audio?: HTMLAudioElement};
+
 @Service()
 export class InariService {
 
@@ -21,12 +23,13 @@ export class InariService {
     private ws!: WebSocket;
 
     private device!: Device;
+    private track!: MediaStreamTrack;
     private routerRtpCapabilities!: RtpCapabilities;
     private producer_transport!: Transport;
     private producer!: Producer;
     private consumers_transport!: Transport;
 
-    private clients: {producer_id: string, consumer?: Consumer}[] = [];
+    private clients: Client[] = [];
 
     private promises_ws: { uuid: string, res: any }[] = [];
 
@@ -120,8 +123,8 @@ export class InariService {
                     const media = await navigator.mediaDevices.getUserMedia({ audio: true }).catch(() => this.disconnect());
 
                     if (!media) return;
-
-                    this.producer = await this.producer_transport.produce({ track: media.getTracks()[0] });
+                    this.track = media.getTracks()[0];
+                    this.producer = await this.producer_transport.produce({ track: this.track });
                 }
             }
         });
@@ -138,13 +141,26 @@ export class InariService {
 
     async add_client(producer_id: string) {
         if (!this.clients.some((v) => v.producer_id == producer_id)) {
-            this.clients.push({producer_id});
+            const client: Client = {producer_id};
+            this.clients.push(client);
 
             let value: any = await this.send_and_receive('consume', { producer_id: producer_id, rtp_capabilities: this.device.recvRtpCapabilities });
 
             if (value) {
                 let { consumer_id, kind, rtp_parameters } = value;
-                console.log(value);
+                
+                const consumer = await this.consumers_transport.consume({ id: consumer_id, producerId: producer_id, kind, rtpParameters: rtp_parameters });
+                client.consumer = consumer;
+                
+                const stream = new MediaStream();
+                stream.addTrack(consumer.track);
+
+                const audio = new Audio();
+                audio.srcObject = stream;
+                audio.play();
+
+                client.audio = audio;
+                client.stream = stream;
             }
         }
     }
@@ -167,9 +183,14 @@ export class InariService {
         this.ws.close();
         this.promises_ws.forEach((v) => v.res(null));
         this.promises_ws = [];
-        this.clients.forEach((c) => c.consumer?.close());
+        this.clients.forEach((c) => {
+            c.consumer?.close();
+            c.stream?.getTracks().forEach((t) => t.stop());
+            c.audio?.remove();
+        });
         this.clients = [];
         this.producer?.close();
+        this.track?.stop();
         this.producer_transport?.close();
         this.consumers_transport?.close();
         this.pageState.set(PageState.WAIT_FOR_CODE);

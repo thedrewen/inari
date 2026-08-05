@@ -54,6 +54,13 @@ export class InariService {
                     this.routerRtpCapabilities = data.data.rtp_capabilities;
                     await this.device.load({ routerRtpCapabilities: this.routerRtpCapabilities });
                     this.send('create_producer_transport', {});
+                } else if (data.kind == 'create_producer_transport') {
+                    const { id, dtls_parameters, ice_candidates, ice_parameters } = data.data;
+                    
+                    this.producer_transport = this.device.createSendTransport({ id, iceParameters: ice_parameters, dtlsParameters: dtls_parameters, iceCandidates: ice_candidates });
+                    this.producer_transport.on('connect', ({ dtlsParameters }) => {
+                        this.send('connect_producer_transport', { dtls_parameters: dtlsParameters });
+                    });
                 }
             } 
         });

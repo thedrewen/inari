@@ -42,6 +42,9 @@ pub async fn handle_client(ws: WebSocket, manager: Manager, id: usize) {
                         if result.is_none() {
                             break;
                         }
+                    },
+                    WsRequestsKind::ConnectProducerTransport { dtls_parameters } => {
+                        manager.connect_producer_transport(id, dtls_parameters).await;
                     }
                 }
             },

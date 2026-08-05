@@ -1,4 +1,4 @@
-use mediasoup::{producer::Producer, transport::Transport, webrtc_transport::WebRtcTransport};
+use mediasoup::{producer::Producer, transport::Transport, types::data_structures::DtlsParameters, webrtc_transport::{WebRtcTransport, WebRtcTransportRemoteParameters}};
 use tokio::sync::mpsc::UnboundedSender;
 use warp::filters::ws::Message;
 
@@ -60,5 +60,13 @@ impl Client {
                 ).unwrap()
             )
         );
+    }
+
+    pub async fn connect_producer_transport(&mut self, dtls_parameters: DtlsParameters) {
+        if let Some(transport) = &self.producer_transport {
+            let _ = transport.connect(WebRtcTransportRemoteParameters {
+                dtls_parameters
+            }).await;
+        }
     }
 }

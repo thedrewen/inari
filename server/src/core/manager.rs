@@ -1,7 +1,7 @@
 use std::{collections::HashMap, env, net::Ipv4Addr, num::{NonZeroU8, NonZeroU32}, sync::Arc};
 
 use mediasoup::{
-    router::{Router, RouterOptions}, types::{data_structures::ListenInfo, rtp_parameters::{MimeTypeAudio, RtpCodecCapability, RtpCodecParametersParameters}}, webrtc_server::{WebRtcServer, WebRtcServerListenInfos, WebRtcServerOptions}, webrtc_transport::{WebRtcTransport, WebRtcTransportOptions}, worker::WorkerSettings, worker_manager::WorkerManager,
+    router::{Router, RouterOptions}, types::{data_structures::{DtlsParameters, ListenInfo}, rtp_parameters::{MimeTypeAudio, RtpCodecCapability, RtpCodecParametersParameters}}, webrtc_server::{WebRtcServer, WebRtcServerListenInfos, WebRtcServerOptions}, webrtc_transport::{WebRtcTransport, WebRtcTransportOptions}, worker::WorkerSettings, worker_manager::WorkerManager,
 };
 use tokio::sync::RwLock;
 use uuid::Uuid;
@@ -137,5 +137,17 @@ impl Manager {
             return Some(transport);
         }
         return None;
+    }
+
+    pub async fn connect_producer_transport(&self, user_id: usize, dtls_parameters: DtlsParameters) {
+        if self.client_is_connected(user_id).await {
+            let mut users_guard = self.clients.write().await;
+            let user = users_guard.get_mut(&user_id);
+            if user.is_none() {
+                return;
+            }
+            let user = user.unwrap();
+            user.connect_producer_transport(dtls_parameters).await;
+        }
     }
 }

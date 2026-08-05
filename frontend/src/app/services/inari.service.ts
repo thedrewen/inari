@@ -29,6 +29,8 @@ export class InariService {
     private producer!: Producer;
     private consumers_transport!: Transport;
 
+    private pingInterval: any = null;
+
     private clients: Client[] = [];
 
     private promises_ws: { uuid: string, res: any }[] = [];
@@ -45,6 +47,9 @@ export class InariService {
                 await this.send('link', { code: authCode });
 
                 this.device = new Device();
+                this.pingInterval = setInterval(() => {
+                    this.send('ping', {});
+                }, 20000);
                 res(null);
             }
 

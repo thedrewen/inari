@@ -41,6 +41,7 @@ The project requires a `.env` file at the root of each service. Refer to the cor
 
 ```bash
 git clone -b main https://git.foxdroidlabs.com/Foxdroid-Prod/inari
+cd inari
 ```
 
 ### 2. Build project
@@ -49,7 +50,6 @@ git clone -b main https://git.foxdroidlabs.com/Foxdroid-Prod/inari
 
 To build the completed project:
 ```bash
-cd inari
 chmod +x build.sh && ./build.sh
 ```
 

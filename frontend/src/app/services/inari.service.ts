@@ -102,7 +102,7 @@ export class InariService {
                         });
 
                         const clients: any = await this.send_and_receive('fetch_clients', {});
-                        clients.ids.forEach((c: string) => this.add_client(c, true));
+                        clients.ids.forEach((c: string) => this.add_client(c));
                     });
 
 
@@ -132,7 +132,6 @@ export class InariService {
                     if (!media) return;
                     this.pageState.set(PageState.CONNECTED);
                     document.body.style.animation = 'backgroundAnimation 20s linear infinite';
-                    this.clients.forEach((c) => c.consumer?.resume());
                     this.track = media.getTracks()[0];
                     this.producer = await this.producer_transport.produce({ track: this.track });
                     this.producer.resume();
@@ -150,7 +149,7 @@ export class InariService {
         }
     }
 
-    async add_client(producer_id: string, is_init: boolean = false) {
+    async add_client(producer_id: string) {
         if (!this.clients.some((v) => v.producer_id == producer_id)) {
             const client: Client = { producer_id };
             this.clients.push(client);
@@ -162,11 +161,7 @@ export class InariService {
                 let { consumer_id, kind, rtp_parameters } = value;
 
                 const consumer = await this.consumers_transport.consume({ id: consumer_id, producerId: producer_id, kind, rtpParameters: rtp_parameters });
-                if (is_init) {
-                    // consumer.pause();
-                } else {
-                    consumer.resume();
-                }
+                consumer.resume();
                 client.consumer = consumer;
 
                 const stream = new MediaStream();

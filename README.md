@@ -37,13 +37,18 @@ The project requires a `.env` file at the root of each service. Refer to the cor
 
 ## Running
 
-### 1. Build project
+### 1. Clone
+
+```bash
+git clone -b main https://git.foxdroidlabs.com/Foxdroid-Prod/inari
+```
+
+### 2. Build project
 - **Only if :** You plan to deploy locally, without using Docker as a runner for production deployment.
 - **Requirement :** [Docker](https://www.docker.com/)
 
 To build the completed project:
 ```bash
-git clone -b main https://git.foxdroidlabs.com/Foxdroid-Prod/inari
 cd inari
 chmod +x build.sh && ./build.sh
 ```

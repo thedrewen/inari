@@ -18,7 +18,6 @@ pub async fn handle_client(ws: WebSocket, manager: Manager, id: usize) {
     });
 
     while let Some(result) = rx.next().await {
-        println!("{:?}", result);
 
         match result {
             Ok(msg) => {
@@ -44,7 +43,13 @@ pub async fn handle_client(ws: WebSocket, manager: Manager, id: usize) {
                         }
                     },
                     WsRequestsKind::ConnectProducerTransport { dtls_parameters } => {
-                        manager.connect_producer_transport(id, dtls_parameters).await;
+                        manager.connect_producer_transport(id, dtls_parameters, value.transaction_uuid).await;
+                    },
+                    WsRequestsKind::Produce { kind, rtp_parameters } => {
+                        let result = manager.produce(id, kind, rtp_parameters, value.transaction_uuid.clone()).await;
+                        if result.is_none() {
+                            break;
+                        }
                     }
                 }
             },

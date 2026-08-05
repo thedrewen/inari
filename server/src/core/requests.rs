@@ -1,4 +1,4 @@
-use mediasoup::types::data_structures::DtlsParameters;
+use mediasoup::types::{data_structures::DtlsParameters, rtp_parameters::{MediaKind, RtpParameters}};
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -6,7 +6,8 @@ use serde::{Deserialize, Serialize};
 pub enum WsRequestsKind {
     Link { code: String },
     CreateProducerTransport { },
-    ConnectProducerTransport { dtls_parameters: DtlsParameters }
+    ConnectProducerTransport { dtls_parameters: DtlsParameters },
+    Produce { kind: MediaKind, rtp_parameters: RtpParameters }
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]

@@ -1,7 +1,7 @@
 use std::{collections::HashMap, env, net::Ipv4Addr, num::{NonZeroU8, NonZeroU32}, sync::Arc};
 
 use mediasoup::{
-    router::{Router, RouterOptions}, types::{data_structures::{DtlsParameters, ListenInfo}, rtp_parameters::{MimeTypeAudio, RtpCodecCapability, RtpCodecParametersParameters}}, webrtc_server::{WebRtcServer, WebRtcServerListenInfos, WebRtcServerOptions}, webrtc_transport::{WebRtcTransport, WebRtcTransportOptions}, worker::WorkerSettings, worker_manager::WorkerManager,
+    producer::Producer, router::{Router, RouterOptions}, types::{data_structures::{DtlsParameters, ListenInfo}, rtp_parameters::{MediaKind, MimeTypeAudio, RtpCodecCapability, RtpCodecParametersParameters, RtpParameters}}, webrtc_server::{WebRtcServer, WebRtcServerListenInfos, WebRtcServerOptions}, webrtc_transport::{WebRtcTransport, WebRtcTransportOptions}, worker::WorkerSettings, worker_manager::WorkerManager,
 };
 use tokio::sync::RwLock;
 use uuid::Uuid;
@@ -139,7 +139,7 @@ impl Manager {
         return None;
     }
 
-    pub async fn connect_producer_transport(&self, user_id: usize, dtls_parameters: DtlsParameters) {
+    pub async fn connect_producer_transport(&self, user_id: usize, dtls_parameters: DtlsParameters, transaction_uuid: String) {
         if self.client_is_connected(user_id).await {
             let mut users_guard = self.clients.write().await;
             let user = users_guard.get_mut(&user_id);
@@ -147,7 +147,21 @@ impl Manager {
                 return;
             }
             let user = user.unwrap();
-            user.connect_producer_transport(dtls_parameters).await;
+            user.connect_producer_transport(dtls_parameters, transaction_uuid).await;
         }
+    }
+
+    pub async fn produce(&self, user_id: usize, kind: MediaKind, rtp_parameters: RtpParameters, transaction_uuid: String) -> Option<Producer> {
+        if self.client_is_connected(user_id).await {
+            let mut users_guard = self.clients.write().await;
+            let user = users_guard.get_mut(&user_id);
+            if user.is_none() {
+                return None;
+            }
+            let user = user.unwrap();
+            return user.produce(kind, rtp_parameters, transaction_uuid).await;
+        }
+
+        return None;
     }
 }

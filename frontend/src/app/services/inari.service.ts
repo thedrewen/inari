@@ -32,6 +32,7 @@ export class InariService {
     private pingInterval: any = null;
 
     private clients: Client[] = [];
+    private clients_count = signal(1);
 
     private promises_ws: { uuid: string, res: any }[] = [];
 
@@ -78,7 +79,10 @@ export class InariService {
                     const client = this.clients.find((c) => c.producer_id == data.data.id);
                     if (client) {
                         client.consumer?.close();
+                        client.stream?.getTracks().forEach((t) => t.stop());
+                        client.audio?.remove();
                     }
+                    this.clients_count.update(() => this.clients.length + 1);
                     this.clients = this.clients.filter((c) => c.producer_id !== data.data.id);
                 } else if (data.kind == 'rtp_capabilities') {
                     this.routerRtpCapabilities = data.data.rtp_capabilities;
@@ -149,6 +153,7 @@ export class InariService {
         if (!this.clients.some((v) => v.producer_id == producer_id)) {
             const client: Client = { producer_id };
             this.clients.push(client);
+            this.clients_count.update(() => this.clients.length + 1);
 
             let value: any = await this.send_and_receive('consume', { producer_id: producer_id, rtp_capabilities: this.device.recvRtpCapabilities });
 

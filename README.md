@@ -4,7 +4,6 @@
 Inari
 </h1>
 
-![Version](https://img.shields.io/badge/version-0.0.2-informational)
 [![Discord](https://img.shields.io/discord/1532277204585676810?label=Discord)](https://discord.gg/4vCG6vMNDJ)
 [![License: AGPL v3](https://img.shields.io/badge/license-AGPL%20v3-blue)](https://www.gnu.org/licenses/agpl-3.0.html)
 

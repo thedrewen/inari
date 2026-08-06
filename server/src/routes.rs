@@ -9,7 +9,8 @@ static NEXT_ID: AtomicUsize = AtomicUsize::new(1);
 pub async fn all() -> impl Filter<Extract = impl Reply> + Clone {
 
     let static_route = warp::get()
-        .and(warp::fs::dir("./static"));
+        .and(warp::fs::dir("./static"))
+        .with(warp::reply::with::header("X-Hash-Check", "5f671f128f0be6dd3d0d8e5713fa03b17957c805a077c24f1a72c5871d0919b9"));
 
     let manager = Manager::new().await;
 

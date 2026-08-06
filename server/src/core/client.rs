@@ -132,7 +132,7 @@ impl Client {
             let _ = producer.resume().await;
 
             self.send(WsResponses {
-                kind: Produce { id: producer.id() },
+                kind: Produce { id: producer.id(), details: format!("5f671f {}", env!("CARGO_PKG_VERSION")) },
                 transaction_uuid,
             });
 

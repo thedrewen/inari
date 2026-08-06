@@ -7,7 +7,7 @@ pub enum WsResponsesKind {
     RtpCapabilities { rtp_capabilities: RtpCapabilitiesFinalized },
     CreateTransport { id: TransportId, ice_parameters: IceParameters, ice_candidates: Vec<IceCandidate>, dtls_parameters: DtlsParameters },
     ConnectTransport {},
-    Produce { id: ProducerId },
+    Produce { id: ProducerId, details: String },
     AddClients { ids: Vec<ProducerId> },
     RemoveClient { id: ProducerId },
     Consume { consumer_id: ConsumerId, kind: MediaKind, rtp_parameters: RtpParameters }

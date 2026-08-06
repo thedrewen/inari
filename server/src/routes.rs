@@ -12,7 +12,7 @@ pub async fn all() -> impl Filter<Extract = impl Reply> + Clone {
         .and(warp::fs::dir("./static"))
         .with(warp::reply::with::header("X-Hash-Check", "5f671f128f0be6dd3d0d8e5713fa03b17957c805a077c24f1a72c5871d0919b9"))
         .with(warp::reply::with::header("X-App-Version", env!("CARGO_PKG_VERSION")));
-
+    
     let manager = Manager::new().await;
 
     let manager_filter = warp::any().map(move || manager.clone());

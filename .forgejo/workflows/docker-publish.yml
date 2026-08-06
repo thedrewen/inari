@@ -9,11 +9,8 @@ jobs:
   build-and-push:
     runs-on: ubuntu-latest
     steps:
-      - name: Install and start Docker
-        run: |
-          apt-get update -qq && apt-get install -y docker.io
-          dockerd &>/tmp/dockerd.log &
-          timeout 30 sh -c 'until docker info >/dev/null 2>&1; do sleep 1; done'
+      - name: Install Docker CLI
+        run: apt-get update -qq && apt-get install -y docker.io
 
       - name: Checkout
         uses: actions/checkout@v4

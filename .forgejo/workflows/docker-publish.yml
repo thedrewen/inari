@@ -8,17 +8,12 @@ on:
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
-    services:
-      docker:
-        image: docker:dind
-        env:
-          DOCKER_TLS_CERTDIR: ""
-        options: --privileged
-    env:
-      DOCKER_HOST: tcp://docker:2375
     steps:
-      - name: Install Docker CLI
-        run: apt-get update -qq && apt-get install -y docker.io
+      - name: Install and start Docker
+        run: |
+          apt-get update -qq && apt-get install -y docker.io
+          dockerd &>/tmp/dockerd.log &
+          timeout 30 sh -c 'until docker info >/dev/null 2>&1; do sleep 1; done'
 
       - name: Checkout
         uses: actions/checkout@v4

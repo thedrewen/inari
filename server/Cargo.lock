@@ -900,7 +900,7 @@ dependencies = [
 
 [[package]]
 name = "inari"
-version = "0.0.2"
+version = "0.0.2-nightly"
 dependencies = [
  "chrono",
  "chrono-tz",
@@ -1068,9 +1068,9 @@ checksum = "b6e8aaa3f231bb4bd57b84b2d5dc3ae7f350265df8aa96492e0bc394a1571909"
 
 [[package]]
 name = "mediasoup"
-version = "0.25.0"
+version = "0.25.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "118ca5bf17cb0c642a8222ac5d7df87821aa87dd487e977df14190b46b2a44f5"
+checksum = "f28d32af6597775327341b1bfc14a0652d7ff84a11991359e21677b24e26450a"
 dependencies = [
  "async-channel",
  "async-executor",
@@ -1101,9 +1101,9 @@ dependencies = [
 
 [[package]]
 name = "mediasoup-sys"
-version = "0.15.0"
+version = "0.15.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "95d681ae3c4d1490b8e7218fd54bb89b7796c1dd73b6281054d791ad02e43f0b"
+checksum = "5bfdb32bc6fcdb9d2b28cd557c7e91cdc727d4b9575bac467569448dbfcf1f07"
 dependencies = [
  "planus",
  "planus-codegen",

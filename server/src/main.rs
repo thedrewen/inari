@@ -20,7 +20,12 @@ async fn main() {
  _| || | | | (_| | |  | |
  \\___/_| |_|\\__,_|_|  |_|
                          
-                         ");
+    Version : {}
+    Git : https://git.foxdroidlabs.com/Foxdroid-Prod/inari
+    Docker Hub : https://hub.docker.com/r/thedrewen/inari
+    Discord : https://discord.gg/4vCG6vMNDJ
+    
+", env!("CARGO_PKG_VERSION"));
 
     let port: u16 = env::var("API_PORT")
         .ok()

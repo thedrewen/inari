@@ -47,8 +47,6 @@ docker run --name inari -p 3030:3030 -p 44444:44444/udp --restart unless-stopped
 docker run --name inari -p 3030:3030 -p 44444:44444/udp --restart unless-stopped thedrewen/inari:nightly
 ```
 
-
-
 By default, the project runs at http://localhost:3030.
 
 ## License

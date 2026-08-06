@@ -37,6 +37,8 @@ The project requires a `.env` file at the root of each service. Refer to the cor
 
 ## Running
 
+Docker Hub : https://hub.docker.com/r/thedrewen/inari
+
 ### Release
 ```bash
 docker run --name inari -p 3030:3030 -p 44444:44444/udp --restart unless-stopped thedrewen/inari:latest

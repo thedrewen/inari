@@ -41,12 +41,12 @@ Docker Hub : https://hub.docker.com/r/thedrewen/inari
 
 ### Release
 ```bash
-docker run --name inari -p 3030:3030 -p 44444:44444/udp --restart unless-stopped thedrewen/inari:latest
+docker run --name inari -e SERVER_PUBLIC_IP=<YOUR PUBLIC IP> -p 3030:3030 -p 44444:44444/udp --restart unless-stopped thedrewen/inari:latest
 ```
 
 ### Nightly
 ```bash
-docker run --name inari -p 3030:3030 -p 44444:44444/udp --restart unless-stopped thedrewen/inari:nightly
+docker run --name inari -e SERVER_PUBLIC_IP=<YOUR PUBLIC IP> -p 3030:3030 -p 44444:44444/udp --restart unless-stopped thedrewen/inari:nightly
 ```
 
 By default, the project runs at http://localhost:3030.

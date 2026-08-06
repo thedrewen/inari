@@ -17,6 +17,9 @@ jobs:
     env:
       DOCKER_HOST: tcp://docker:2375
     steps:
+      - name: Install Docker CLI
+        run: apt-get update -qq && apt-get install -y docker.io
+
       - name: Checkout
         uses: actions/checkout@v4
 

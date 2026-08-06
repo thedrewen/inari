@@ -11,7 +11,7 @@ Inari
 A web app that lets you chat with people nearby in games like Minecraft, etc.
 </div>
 
-> ⚠️ The `main` branch contains the stable production code. `develop` is the active development branch, potentially unstable.
+> ⚠️ The `main` branch contains the stable/nightly production code. `develop` is the active development branch, potentially unstable.
 
 ## Tech stack
 

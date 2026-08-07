@@ -17,6 +17,7 @@ pub struct Client {
     id: usize,
     mpsc_tx: UnboundedSender<Message>,
     connected: bool,
+    connected_as_server: bool,
     pub code: String,
 
     producer: Option<Producer>,
@@ -32,6 +33,7 @@ impl Client {
             id,
             mpsc_tx,
             connected: false,
+            connected_as_server: false,
             code: String::new(),
 
             producer: None,
@@ -48,6 +50,14 @@ impl Client {
 
     pub fn set_connected(&mut self) {
         self.connected = true;
+    }
+
+    pub fn is_connected_as_server(&self) -> bool {
+        self.connected_as_server
+    }
+
+    pub fn set_connected_as_server(&mut self) {
+        self.connected_as_server = true;
     }
 
     pub fn get_id(&self) -> usize {

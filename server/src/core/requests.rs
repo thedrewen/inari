@@ -4,6 +4,7 @@ use serde::{Deserialize, Serialize};
 #[derive(Serialize, Deserialize, Clone, Debug)]
 #[serde( tag = "kind", content = "data", rename_all = "snake_case" )]
 pub enum WsRequestsKind {
+    // Clients
     RtpCapabilities {  },
     Link { code: String },
     CreateTransport { is_producer: bool },
@@ -11,6 +12,9 @@ pub enum WsRequestsKind {
     Produce { kind: MediaKind, rtp_parameters: RtpParameters },
     FetchClients { },
     Consume { producer_id: ProducerId, rtp_capabilities: RtpCapabilities }
+
+    // Server
+    
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]

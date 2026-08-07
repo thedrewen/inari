@@ -96,11 +96,9 @@ impl Manager {
         }
     }
 
-
     pub async fn connect_client(&self, client: Client) {
         let id = client.get_id();
         logger::log_info(format!("Client #{id} has logged in."));
-
         self.clients.write().await.insert(id, client);
     }
 
@@ -109,8 +107,8 @@ impl Manager {
     }
 
     pub async fn disconnect_client(&self, client_id: usize) {
-
         let producer_id = self.clients.read().await.get(&client_id).and_then(|c| c.get_producer_id());
+        let is_server = self.clients.read().await.get(&client_id).map(|c| c.is_connected_as_server()).unwrap_or(false);
         if let Some(producer_id) = producer_id {
             self.producers.write().await.remove(&producer_id);
             for client in self.clients.write().await.values_mut() {
@@ -120,9 +118,12 @@ impl Manager {
                 }
             }
         }
-
         self.clients.write().await.remove(&client_id);
-        logger::log_info(format!("Client #{client_id} has logged out."));
+        if is_server {
+            logger::log_info(format!("Server Client #{client_id} has logged out."));
+        } else {
+            logger::log_info(format!("Client #{client_id} has logged out."));
+        }
     }
 
     pub async fn client_is_connected(&self, client_id: usize) -> bool {
@@ -133,6 +134,13 @@ impl Manager {
         false
     }
 
+    pub async fn client_is_server(&self, client_id: usize) -> bool {
+        let client_guard = self.clients.read().await;
+        if let Some(client) = client_guard.get(&client_id) {
+            return client.is_connected_as_server();
+        }
+        false
+    }
 
     
     pub async fn set_code(&self, client_id: usize, code: String) {

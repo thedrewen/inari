@@ -10,8 +10,9 @@ pub async fn handle_client(ws: WebSocket, manager: Manager, id: usize) {
 
     let client = Client::new(id, mpsc_tx);
     let client_copy = client.clone();
+    let mut is_client = true;
     manager.connect_client(client).await;
-    
+
     tokio::spawn(async move {
         while let Some(result) = mpsc_rx.recv().await {
             let _ = tx.send(result).await;
@@ -33,40 +34,57 @@ pub async fn handle_client(ws: WebSocket, manager: Manager, id: usize) {
                 let value: WsRequests = value.unwrap();
 
                 match value.kind {
+                    // Clients :
                     WsRequestsKind::Link { code } => {
-                        manager.set_code(id, code).await;
+                        if is_client {
+                            manager.set_code(id, code).await;
+                        }
                     },
                     WsRequestsKind::RtpCapabilities {  } => {
-                        let response = WsResponses {
-                            kind: crate::core::responses::WsResponsesKind::RtpCapabilities { rtp_capabilities: manager.get_rtp_capabilities().await },
-                            transaction_uuid: value.transaction_uuid.clone()
-                        };
-                        client_copy.send(response);
+                        if is_client {
+                            let response = WsResponses {
+                                kind: crate::core::responses::WsResponsesKind::RtpCapabilities { rtp_capabilities: manager.get_rtp_capabilities().await },
+                                transaction_uuid: value.transaction_uuid.clone()
+                            };
+                            client_copy.send(response);
+                        }
                     },
                     WsRequestsKind::CreateTransport { is_producer } => {
-                        let result = manager.create_transport(id, is_producer, value.transaction_uuid.clone()).await;
-                        if result.is_none() {
-                            break;
+                        if is_client {
+                            let result = manager.create_transport(id, is_producer, value.transaction_uuid.clone()).await;
+                            if result.is_none() {
+                                break;
+                            }
                         }
                     },
                     WsRequestsKind::ConnectTransport { is_producer, dtls_parameters } => {
-                        manager.connect_transport(id, is_producer, dtls_parameters, value.transaction_uuid).await;
+                        if is_client {
+                             manager.connect_transport(id, is_producer, dtls_parameters, value.transaction_uuid).await;
+                        }
                     },
                     WsRequestsKind::Produce { kind, rtp_parameters } => {
-                        let result = manager.produce(id, kind, rtp_parameters, value.transaction_uuid.clone()).await;
-                        if result.is_none() {
-                            break;
+                        if is_client {
+                            let result = manager.produce(id, kind, rtp_parameters, value.transaction_uuid.clone()).await;
+                            if result.is_none() {
+                                break;
+                            }
                         }
                     },
                     WsRequestsKind::FetchClients {  } => {
-                        manager.send_producers_ids(id, value.transaction_uuid.clone()).await;
+                        if is_client {
+                            manager.send_producers_ids(id, value.transaction_uuid.clone()).await;
+                        }
                     },
                     WsRequestsKind::Consume { producer_id, rtp_capabilities } => {
-                        let result = manager.consume(id, producer_id, rtp_capabilities, value.transaction_uuid.clone()).await;
-                        if result.is_none() {
-                            break;
+                        if is_client {
+                            let result = manager.consume(id, producer_id, rtp_capabilities, value.transaction_uuid.clone()).await;
+                            if result.is_none() {
+                                break;
+                            }
                         }
                     }
+                    // Server :
+                    
                 }
             },
             Err(_) => break

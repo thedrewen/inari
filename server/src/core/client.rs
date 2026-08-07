@@ -157,7 +157,7 @@ impl Client {
         if let Some(transport) = &self.consumers_transport {
             let consumer = transport.consume(ConsumerOptions::new(producer_id, rtp_capabilities)).await.unwrap();
             self.consumers.insert(producer_id, consumer.clone());
-            let _ = consumer.resume().await;
+            let _ = consumer.pause().await;
             self.send(WsResponses { kind: Consume { consumer_id: consumer.id().clone(), kind: consumer.kind().clone(), rtp_parameters: consumer.rtp_parameters().clone() }, transaction_uuid });
             return Some(consumer);
         }

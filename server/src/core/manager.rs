@@ -329,26 +329,30 @@ impl Manager {
 
     pub async fn handle_client_as_server(&self, clients: Vec<ClientServerDefinition>) {
         let mut clients_by_code: HashMap<String, Client> = HashMap::new();
-        let max_distance: f64 = env::var("MAX_DISTANCE").unwrap_or(String::from("20")).parse().unwrap_or(20.0);
+        let max_distance: f64 = env::var("MAX_DISTANCE")
+            .unwrap_or(String::from("20"))
+            .parse()
+            .unwrap_or(20.0);
 
         for client in self.clients.read().await.values() {
-            if clients.iter().into_iter().any(|c| c.code == client.code) && client.get_producer_id().is_some() {
+            if clients.iter().any(|c| c.code == client.code)
+                && client.get_producer_id().is_some()
+            {
                 clients_by_code.insert(client.code.clone(), client.clone());
             }
         }
 
         for client in &clients {
-            let mut ws_client = clients_by_code.get(&client.code).unwrap().clone();
+            let Some(mut ws_client) = clients_by_code.get(&client.code).cloned() else { continue };
             for client_target in &clients {
-                let ws_client_target = clients_by_code.get(&client_target.code).unwrap();
-                let producer_id: Option<ProducerId> = ws_client_target.get_producer_id();
+                if client.code == client_target.code { continue; }
+                let Some(ws_client_target) = clients_by_code.get(&client_target.code) else { continue };
+                let Some(producer_id) = ws_client_target.get_producer_id() else { continue };
 
-                if let Some(producer_id) = producer_id {
-                    if client.distance_to(client_target) > max_distance {
-                        ws_client.mute_consumer(producer_id).await;
-                    } else {
-                        ws_client.remove_consumer(producer_id);
-                    }
+                if client.distance_to(client_target) > max_distance {
+                    ws_client.mute_consumer(producer_id).await;
+                } else {
+                    ws_client.resume_consumer(producer_id).await;
                 }
             }
         }

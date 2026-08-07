@@ -173,7 +173,7 @@ impl Manager {
         if let Some(producer_id) = producer_id {
             self.producers.write().await.remove(&producer_id);
             for client in self.clients.write().await.values_mut() {
-                if client.get_id() != client_id {
+                if client.get_id() != client_id && !client.is_connected_as_server() {
                     client.send(WsResponses {
                         kind: RemoveClient { id: producer_id },
                         transaction_uuid: Uuid::new_v4().to_string(),

@@ -168,6 +168,12 @@ impl Client {
         self.consumers.remove(&producer_id);
     }
 
+    pub async fn mute_consumers(&mut self) {
+        for consumer in self.consumers.values() {
+            let _ = consumer.pause().await;
+        }
+    }
+
     pub async fn mute_consumer(&mut self, producer_id: ProducerId) {
         if let Some(consumer) = self.consumers.get(&producer_id) {
             let _ = consumer.pause().await;

@@ -344,6 +344,7 @@ impl Manager {
 
         for client in &clients {
             let Some(mut ws_client) = clients_by_code.get(&client.code).cloned() else { continue };
+            ws_client.mute_consumers().await;
             for client_target in &clients {
                 if client.code == client_target.code { continue; }
                 let Some(ws_client_target) = clients_by_code.get(&client_target.code) else { continue };

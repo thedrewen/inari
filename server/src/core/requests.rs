@@ -5,15 +5,15 @@ use serde::{Deserialize, Serialize};
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct ClientServerDefinition {
     pub code: String,
-    pub position: [usize; 3],
+    pub position: [f64; 3],
     pub muted: bool
 }
 
 impl ClientServerDefinition {
     pub fn distance_to(&self, target: &ClientServerDefinition) -> f64 {
-        let dx = self.position[0] as f64 - target.position[0] as f64;
-        let dy = self.position[1] as f64 - target.position[1] as f64;
-        let dz = self.position[2] as f64 - target.position[2] as f64;
+        let dx = self.position[0] - target.position[0];
+        let dy = self.position[1] - target.position[1];
+        let dz = self.position[2] - target.position[2];
         (dx * dx + dy * dy + dz * dz).sqrt()
     }
 }

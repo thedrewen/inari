@@ -1,7 +1,7 @@
 use std::{collections::HashMap, env, net::Ipv4Addr, num::{NonZeroU8, NonZeroU32}, sync::Arc};
 
 use mediasoup::{
-    consumer::{Consumer}, producer::{Producer, ProducerId}, router::{Router, RouterOptions}, types::{data_structures::{DtlsParameters, ListenInfo}, rtp_parameters::{MediaKind, MimeTypeAudio, RtpCapabilities, RtpCodecCapability, RtpCodecParametersParameters, RtpParameters}}, webrtc_server::{WebRtcServer, WebRtcServerListenInfos, WebRtcServerOptions}, webrtc_transport::{WebRtcTransport, WebRtcTransportOptions}, worker::WorkerSettings, worker_manager::WorkerManager,
+    consumer::Consumer, producer::{Producer, ProducerId}, router::{Router, RouterOptions}, types::{data_structures::{DtlsParameters, ListenInfo}, rtp_parameters::{MediaKind, MimeTypeAudio, RtpCapabilities, RtpCapabilitiesFinalized, RtpCodecCapability, RtpCodecParametersParameters, RtpParameters}}, webrtc_server::{WebRtcServer, WebRtcServerListenInfos, WebRtcServerOptions}, webrtc_transport::{WebRtcTransport, WebRtcTransportOptions}, worker::WorkerSettings, worker_manager::WorkerManager,
 };
 use tokio::{sync::RwLock};
 use uuid::Uuid;
@@ -101,17 +101,11 @@ impl Manager {
         let id = client.get_id();
         logger::log_info(format!("Client #{id} has logged in."));
 
-        let rtp_capabilities = self.router.rtp_capabilities();
-        let uuid = Uuid::new_v4().to_string();
-
-        let response = WsResponses {
-            kind: super::responses::WsResponsesKind::RtpCapabilities { rtp_capabilities },
-            transaction_uuid: uuid
-        };
-        
-        client.send(response);
-
         self.clients.write().await.insert(id, client);
+    }
+
+    pub async fn get_rtp_capabilities(&self) -> RtpCapabilitiesFinalized {
+        self.router.rtp_capabilities().clone()
     }
 
     pub async fn disconnect_client(&self, client_id: usize) {

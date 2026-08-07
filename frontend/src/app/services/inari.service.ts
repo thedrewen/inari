@@ -46,6 +46,7 @@ export class InariService {
 
             this.ws.onopen = async () => {
                 console.log('Connected to inari ws !');
+                this.send_and_receive('rtp_capabilities', {}).then((r: any) => this.init_mediasoup(r));
                 await this.send('link', { code: authCode });
 
                 this.device = new Device();
@@ -82,59 +83,6 @@ export class InariService {
                     }
                     this.clients = this.clients.filter((c) => c.producer_id !== data.data.id);
                     this.clients_count.update(() => this.clients.length + 1);
-                } else if (data.kind == 'rtp_capabilities') {
-                    this.routerRtpCapabilities = data.data.rtp_capabilities;
-                    await this.device.load({ routerRtpCapabilities: this.routerRtpCapabilities });
-                    const result: any = await this.send_and_receive('create_transport', { is_producer: true });
-
-
-                    this.send_and_receive('create_transport', { is_producer: false }).then(async (result: any) => {
-                        const { id, dtls_parameters, ice_candidates, ice_parameters } = result;
-
-                        this.consumers_transport = this.device.createRecvTransport({ id, iceParameters: ice_parameters, dtlsParameters: dtls_parameters, iceCandidates: ice_candidates });
-                        this.consumers_transport.on('connect', async ({ dtlsParameters }, callback, errback) => {
-                            let result = await this.send_and_receive('connect_transport', { is_producer: false, dtls_parameters: dtlsParameters });
-                            if (result) {
-                                callback();
-                            } else {
-                                errback(Error());
-                            }
-                        });
-
-                        const clients: any = await this.send_and_receive('fetch_clients', {});
-                        clients.ids.forEach((c: string) => this.add_client(c));
-                    });
-
-
-                    const { id, dtls_parameters, ice_candidates, ice_parameters } = result;
-                    this.producer_transport = this.device.createSendTransport({ id, iceParameters: ice_parameters, dtlsParameters: dtls_parameters, iceCandidates: ice_candidates });
-
-                    this.producer_transport.on('connect', async ({ dtlsParameters }, callback, errback) => {
-                        let result = await this.send_and_receive('connect_transport', { is_producer: true, dtls_parameters: dtlsParameters });
-                        if (result) {
-                            callback();
-                        } else {
-                            errback(Error());
-                        }
-                    });
-
-                    this.producer_transport.on('produce', async ({ kind, rtpParameters }, callback, errback) => {
-                        let result: any = await this.send_and_receive('produce', { kind, rtp_parameters: rtpParameters });
-                        if (result) {
-                            callback(result.id);
-                        } else {
-                            errback(Error());
-                        }
-                    });
-
-                    const media = await navigator.mediaDevices.getUserMedia({ audio: true }).catch(() => this.disconnect());
-
-                    if (!media) return;
-                    this.pageState.set(PageState.CONNECTED);
-                    document.body.style.animation = 'backgroundAnimation 20s linear infinite';
-                    this.track = media.getTracks()[0];
-                    this.producer = await this.producer_transport.produce({ track: this.track });
-                    this.producer.resume();
                 }
             }
         });
@@ -189,6 +137,61 @@ export class InariService {
         return new Promise((res) => {
             this.promises_ws.push({ uuid, res });
         });
+    }
+
+    async init_mediasoup(r: any) {
+        this.routerRtpCapabilities = r.rtp_capabilities;
+        await this.device.load({ routerRtpCapabilities: this.routerRtpCapabilities });
+        const result: any = await this.send_and_receive('create_transport', { is_producer: true });
+
+
+        this.send_and_receive('create_transport', { is_producer: false }).then(async (result: any) => {
+            const { id, dtls_parameters, ice_candidates, ice_parameters } = result;
+
+            this.consumers_transport = this.device.createRecvTransport({ id, iceParameters: ice_parameters, dtlsParameters: dtls_parameters, iceCandidates: ice_candidates });
+            this.consumers_transport.on('connect', async ({ dtlsParameters }, callback, errback) => {
+                let result = await this.send_and_receive('connect_transport', { is_producer: false, dtls_parameters: dtlsParameters });
+                if (result) {
+                    callback();
+                } else {
+                    errback(Error());
+                }
+            });
+
+            const clients: any = await this.send_and_receive('fetch_clients', {});
+            clients.ids.forEach((c: string) => this.add_client(c));
+        });
+
+
+        const { id, dtls_parameters, ice_candidates, ice_parameters } = result;
+        this.producer_transport = this.device.createSendTransport({ id, iceParameters: ice_parameters, dtlsParameters: dtls_parameters, iceCandidates: ice_candidates });
+
+        this.producer_transport.on('connect', async ({ dtlsParameters }, callback, errback) => {
+            let result = await this.send_and_receive('connect_transport', { is_producer: true, dtls_parameters: dtlsParameters });
+            if (result) {
+                callback();
+            } else {
+                errback(Error());
+            }
+        });
+
+        this.producer_transport.on('produce', async ({ kind, rtpParameters }, callback, errback) => {
+            let result: any = await this.send_and_receive('produce', { kind, rtp_parameters: rtpParameters });
+            if (result) {
+                callback(result.id);
+            } else {
+                errback(Error());
+            }
+        });
+
+        const media = await navigator.mediaDevices.getUserMedia({ audio: true }).catch(() => this.disconnect());
+
+        if (!media) return;
+        this.pageState.set(PageState.CONNECTED);
+        document.body.style.animation = 'backgroundAnimation 20s linear infinite';
+        this.track = media.getTracks()[0];
+        this.producer = await this.producer_transport.produce({ track: this.track });
+        this.producer.resume();
     }
 
     async disconnect(by_ws: boolean = false) {

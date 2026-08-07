@@ -3,5 +3,5 @@ import { Service } from '@angular/core';
 @Service()
 export class UrlService {
 
-    public wsUrl = "wss://"+window.location.host+"/ws";
+    public wsUrl = "ws"+(window.location.protocol == 'https:' ? 's' : '')+"://"+window.location.host+"/ws";
 }

@@ -1,16 +1,17 @@
 use futures_util::{SinkExt, StreamExt};
-use warp::filters::ws::WebSocket;
+use warp::filters::ws::{WebSocket};
 
-use crate::core::{client::Client, manager::Manager, requests::{WsRequests, WsRequestsKind}};
+use crate::core::{client::Client, manager::Manager, requests::{WsRequests, WsRequestsKind}, responses::WsResponses};
 
 pub async fn handle_client(ws: WebSocket, manager: Manager, id: usize) {
     let (mut tx, mut rx) = ws.split();
 
     let (mpsc_tx, mut mpsc_rx) = tokio::sync::mpsc::unbounded_channel();
-    
-    let client = Client::new(id, mpsc_tx);
-    manager.connect_client(client).await;
 
+    let client = Client::new(id, mpsc_tx);
+    let client_copy = client.clone();
+    manager.connect_client(client).await;
+    
     tokio::spawn(async move {
         while let Some(result) = mpsc_rx.recv().await {
             let _ = tx.send(result).await;
@@ -18,7 +19,6 @@ pub async fn handle_client(ws: WebSocket, manager: Manager, id: usize) {
     });
 
     while let Some(result) = rx.next().await {
-
         match result {
             Ok(msg) => {
                 let value = msg.to_str();
@@ -35,6 +35,13 @@ pub async fn handle_client(ws: WebSocket, manager: Manager, id: usize) {
                 match value.kind {
                     WsRequestsKind::Link { code } => {
                         manager.set_code(id, code).await;
+                    },
+                    WsRequestsKind::RtpCapabilities {  } => {
+                        let response = WsResponses {
+                            kind: crate::core::responses::WsResponsesKind::RtpCapabilities { rtp_capabilities: manager.get_rtp_capabilities().await },
+                            transaction_uuid: value.transaction_uuid.clone()
+                        };
+                        client_copy.send(response);
                     },
                     WsRequestsKind::CreateTransport { is_producer } => {
                         let result = manager.create_transport(id, is_producer, value.transaction_uuid.clone()).await;

@@ -350,7 +350,7 @@ impl Manager {
                 let Some(ws_client_target) = clients_by_code.get(&client_target.code) else { continue };
                 let Some(producer_id) = ws_client_target.get_producer_id() else { continue };
 
-                if client.distance_to(client_target) > max_distance {
+                if client.distance_to(client_target) > max_distance || client_target.muted {
                     ws_client.mute_consumer(producer_id).await;
                 } else {
                     ws_client.resume_consumer(producer_id).await;

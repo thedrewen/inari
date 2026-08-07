@@ -5,7 +5,8 @@ use serde::{Deserialize, Serialize};
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct ClientServerDefinition {
     pub code: String,
-    pub position: [usize; 3]
+    pub position: [usize; 3],
+    pub muted: bool
 }
 
 impl ClientServerDefinition {

@@ -276,7 +276,7 @@ impl Manager {
                 self.producers.write().await.insert(producer_id, client_id);
                 tokio::spawn(async move {
                     for client in clients_copy.values() {
-                        if client.get_id() != client_id {
+                        if client.get_id() != client_id && !client.is_connected_as_server() {
                             let uuid = Uuid::new_v4().to_string();
                             client.send(WsResponses {
                                 kind: AddClients {

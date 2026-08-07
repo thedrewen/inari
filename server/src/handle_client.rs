@@ -84,7 +84,20 @@ pub async fn handle_client(ws: WebSocket, manager: Manager, id: usize) {
                         }
                     }
                     // Server :
-                    
+                    WsRequestsKind::Auth { api_key } => {
+                        if manager.get_api_key() == api_key {
+                            is_client = false;
+                            manager.set_connected_as_server(id).await;
+                            client_copy.send(WsResponses { kind: crate::core::responses::WsResponsesKind::Auth {  }, transaction_uuid: value.transaction_uuid.clone() });
+                        } else {
+                            break;
+                        }
+                    },
+                    WsRequestsKind::Clients { clients } => {
+                        if !is_client {
+                            manager.handle_client_as_server(clients).await;
+                        }
+                    }
                 }
             },
             Err(_) => break

@@ -1,12 +1,42 @@
-use std::{collections::HashMap, env, net::Ipv4Addr, num::{NonZeroU8, NonZeroU32}, sync::Arc};
+use std::{
+    collections::HashMap,
+    env,
+    net::Ipv4Addr,
+    num::{NonZeroU8, NonZeroU32},
+    sync::Arc,
+};
 
 use mediasoup::{
-    consumer::Consumer, producer::{Producer, ProducerId}, router::{Router, RouterOptions}, types::{data_structures::{DtlsParameters, ListenInfo}, rtp_parameters::{MediaKind, MimeTypeAudio, RtpCapabilities, RtpCapabilitiesFinalized, RtpCodecCapability, RtpCodecParametersParameters, RtpParameters}}, webrtc_server::{WebRtcServer, WebRtcServerListenInfos, WebRtcServerOptions}, webrtc_transport::{WebRtcTransport, WebRtcTransportOptions}, worker::WorkerSettings, worker_manager::WorkerManager,
+    consumer::Consumer,
+    producer::{Producer, ProducerId},
+    router::{Router, RouterOptions},
+    types::{
+        data_structures::{DtlsParameters, ListenInfo},
+        rtp_parameters::{
+            MediaKind, MimeTypeAudio, RtpCapabilities, RtpCapabilitiesFinalized,
+            RtpCodecCapability, RtpCodecParametersParameters, RtpParameters,
+        },
+    },
+    webrtc_server::{WebRtcServer, WebRtcServerListenInfos, WebRtcServerOptions},
+    webrtc_transport::{WebRtcTransport, WebRtcTransportOptions},
+    worker::WorkerSettings,
+    worker_manager::WorkerManager,
 };
-use tokio::{sync::RwLock};
+use rand::{RngExt, distr::Alphanumeric};
+use tokio::sync::RwLock;
 use uuid::Uuid;
 
-use crate::{core::{client::Client, responses::{WsResponses, WsResponsesKind::{AddClients, RemoveClient}}}, logger};
+use crate::{
+    core::{
+        client::Client,
+        requests::ClientServerDefinition,
+        responses::{
+            WsResponses,
+            WsResponsesKind::{AddClients, RemoveClient},
+        },
+    },
+    logger,
+};
 
 #[derive(Clone)]
 pub struct Manager {
@@ -14,6 +44,7 @@ pub struct Manager {
     producers: Arc<RwLock<HashMap<ProducerId, usize>>>,
     router: Router,
     webrtc_server: WebRtcServer,
+    api_key: String,
 }
 
 impl Manager {
@@ -66,15 +97,32 @@ impl Manager {
 
         let router_options = RouterOptions::new(vec![audio_codec]);
         let router = worker.create_router(router_options).await.unwrap();
+        let mut api_key = env::var("API_KEY").unwrap_or(String::from(""));
+
+        if api_key == String::from("") {
+            api_key = rand::rng()
+                .sample_iter(&Alphanumeric)
+                .take(7)
+                .map(char::from)
+                .collect();
+
+            logger::log_info(format!("Auto Generated API_KEY: {}", api_key));
+        }
 
         Self {
             clients: Arc::new(RwLock::new(HashMap::new())),
             producers: Arc::new(RwLock::new(HashMap::new())),
             webrtc_server: webrtc_server,
-            router
+            router,
+            api_key,
         }
     }
 
+    pub fn get_api_key(&self) -> String {
+        self.api_key.clone()
+    }
+
+    // Client
 
     pub async fn send_producers_ids(&self, client_id: usize, transaction_uuid: String) {
         let client_guard = self.clients.read().await;
@@ -91,8 +139,10 @@ impl Manager {
                 }
             }
 
-            client.send(WsResponses { kind: AddClients { ids }, transaction_uuid  });
-            
+            client.send(WsResponses {
+                kind: AddClients { ids },
+                transaction_uuid,
+            });
         }
     }
 
@@ -107,13 +157,27 @@ impl Manager {
     }
 
     pub async fn disconnect_client(&self, client_id: usize) {
-        let producer_id = self.clients.read().await.get(&client_id).and_then(|c| c.get_producer_id());
-        let is_server = self.clients.read().await.get(&client_id).map(|c| c.is_connected_as_server()).unwrap_or(false);
+        let producer_id = self
+            .clients
+            .read()
+            .await
+            .get(&client_id)
+            .and_then(|c| c.get_producer_id());
+        let is_server = self
+            .clients
+            .read()
+            .await
+            .get(&client_id)
+            .map(|c| c.is_connected_as_server())
+            .unwrap_or(false);
         if let Some(producer_id) = producer_id {
             self.producers.write().await.remove(&producer_id);
             for client in self.clients.write().await.values_mut() {
                 if client.get_id() != client_id {
-                    client.send(WsResponses { kind: RemoveClient { id: producer_id }, transaction_uuid: Uuid::new_v4().to_string() });
+                    client.send(WsResponses {
+                        kind: RemoveClient { id: producer_id },
+                        transaction_uuid: Uuid::new_v4().to_string(),
+                    });
                     client.remove_consumer(producer_id);
                 }
             }
@@ -134,28 +198,25 @@ impl Manager {
         false
     }
 
-    pub async fn client_is_server(&self, client_id: usize) -> bool {
-        let client_guard = self.clients.read().await;
-        if let Some(client) = client_guard.get(&client_id) {
-            return client.is_connected_as_server();
-        }
-        false
-    }
-
-    
     pub async fn set_code(&self, client_id: usize, code: String) {
         let mut client_guard = self.clients.write().await;
-        let client = client_guard.get_mut(&client_id);
-        if client.is_some() {
-            let client = client.unwrap();
+        if let Some(client) = client_guard.get_mut(&client_id) {
             client.code = code.clone();
             client.set_connected();
-            
-            logger::log_info(format!("Client #{} has set their code to {}", client.get_id(), code));
+            logger::log_info(format!(
+                "Client #{} has set their code to {}",
+                client.get_id(),
+                code
+            ));
         }
     }
 
-    pub async fn create_transport(&self, client_id: usize, is_producer: bool, transaction_uuid: String) -> Option<WebRtcTransport> {
+    pub async fn create_transport(
+        &self,
+        client_id: usize,
+        is_producer: bool,
+        transaction_uuid: String,
+    ) -> Option<WebRtcTransport> {
         if self.client_is_connected(client_id).await {
             let options = WebRtcTransportOptions::new_with_server(self.webrtc_server.clone());
             let transport = self.router.create_webrtc_transport(options).await.unwrap();
@@ -172,7 +233,13 @@ impl Manager {
         return None;
     }
 
-    pub async fn connect_transport(&self, client_id: usize, is_producer: bool, dtls_parameters: DtlsParameters, transaction_uuid: String) {
+    pub async fn connect_transport(
+        &self,
+        client_id: usize,
+        is_producer: bool,
+        dtls_parameters: DtlsParameters,
+        transaction_uuid: String,
+    ) {
         if self.client_is_connected(client_id).await {
             let mut clients_guard = self.clients.write().await;
             let client = clients_guard.get_mut(&client_id);
@@ -180,11 +247,19 @@ impl Manager {
                 return;
             }
             let client = client.unwrap();
-            client.connect_transport(is_producer, dtls_parameters, transaction_uuid).await;
+            client
+                .connect_transport(is_producer, dtls_parameters, transaction_uuid)
+                .await;
         }
     }
 
-    pub async fn produce(&self, client_id: usize, kind: MediaKind, rtp_parameters: RtpParameters, transaction_uuid: String) -> Option<Producer> {
+    pub async fn produce(
+        &self,
+        client_id: usize,
+        kind: MediaKind,
+        rtp_parameters: RtpParameters,
+        transaction_uuid: String,
+    ) -> Option<Producer> {
         if self.client_is_connected(client_id).await {
             let mut clients_guard = self.clients.write().await;
             let client = clients_guard.get_mut(&client_id);
@@ -203,7 +278,12 @@ impl Manager {
                     for client in clients_copy.values() {
                         if client.get_id() != client_id {
                             let uuid = Uuid::new_v4().to_string();
-                            client.send(WsResponses { kind: AddClients { ids: vec![producer_id] }, transaction_uuid: uuid });
+                            client.send(WsResponses {
+                                kind: AddClients {
+                                    ids: vec![producer_id],
+                                },
+                                transaction_uuid: uuid,
+                            });
                         }
                     }
                 });
@@ -214,16 +294,63 @@ impl Manager {
         return None;
     }
 
-    pub async fn consume(&self, client_id: usize, producer_id: ProducerId, rtp_capabilities: RtpCapabilities, transaction_uuid: String) -> Option<Consumer> {
+    pub async fn consume(
+        &self,
+        client_id: usize,
+        producer_id: ProducerId,
+        rtp_capabilities: RtpCapabilities,
+        transaction_uuid: String,
+    ) -> Option<Consumer> {
         if self.client_is_connected(client_id).await {
             let mut client_guard = self.clients.write().await;
             let client = client_guard.get_mut(&client_id);
 
             if let Some(client) = client {
-                return client.consume(producer_id, rtp_capabilities, transaction_uuid).await;
+                return client
+                    .consume(producer_id, rtp_capabilities, transaction_uuid)
+                    .await;
             }
         }
 
         None
+    }
+
+    // Server
+    pub async fn set_connected_as_server(&self, client_id: usize) {
+        let mut client_guard = self.clients.write().await;
+        if let Some(client) = client_guard.get_mut(&client_id) {
+            client.set_connected_as_server();
+            logger::log_info(format!(
+                "Client #{} is identified as a server.",
+                client.get_id()
+            ));
+        }
+    }
+
+    pub async fn handle_client_as_server(&self, clients: Vec<ClientServerDefinition>) {
+        let mut clients_by_code: HashMap<String, Client> = HashMap::new();
+        let max_distance: f64 = env::var("MAX_DISTANCE").unwrap_or(String::from("20")).parse().unwrap_or(20.0);
+
+        for client in self.clients.read().await.values() {
+            if clients.iter().into_iter().any(|c| c.code == client.code) && client.get_producer_id().is_some() {
+                clients_by_code.insert(client.code.clone(), client.clone());
+            }
+        }
+
+        for client in &clients {
+            let mut ws_client = clients_by_code.get(&client.code).unwrap().clone();
+            for client_target in &clients {
+                let ws_client_target = clients_by_code.get(&client_target.code).unwrap();
+                let producer_id: Option<ProducerId> = ws_client_target.get_producer_id();
+
+                if let Some(producer_id) = producer_id {
+                    if client.distance_to(client_target) > max_distance {
+                        ws_client.mute_consumer(producer_id).await;
+                    } else {
+                        ws_client.remove_consumer(producer_id);
+                    }
+                }
+            }
+        }
     }
 }

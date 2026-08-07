@@ -1,0 +1,18 @@
+[
+    {
+        "code" : "user1",
+        "position" : [
+            0,
+            0,
+            0
+        ]
+    },
+    {
+        "code" : "user2",
+        "position" : [
+            10,
+            0,
+            0
+        ]
+    }
+]

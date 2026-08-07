@@ -167,4 +167,16 @@ impl Client {
     pub fn remove_consumer(&mut self, producer_id: ProducerId) {
         self.consumers.remove(&producer_id);
     }
+
+    pub async fn mute_consumer(&mut self, producer_id: ProducerId) {
+        if let Some(consumer) = self.consumers.get(&producer_id) {
+            let _ = consumer.pause().await;
+        }
+    }
+
+    pub async fn resume_consumer(&mut self, producer_id: ProducerId) {
+        if let Some(consumer) = self.consumers.get(&producer_id) {
+            let _ = consumer.resume().await;
+        }
+    }
 }

@@ -34,6 +34,14 @@ inari/
 
 The project requires a `.env` file at the root of each service. Refer to the corresponding `.env.example` files.
 
+| Name | Description | Default Value |
+|:---- | :---------: | ------------: |
+| SERVER_PUBLIC_IP | Your server's public IP address | Empty |
+| API_PORT | API Port | 3030 |
+| API_KEY | Api key for game plugin/addon/mod | Auto Generated | 
+| WEBRTC_SERVER_PORT | WebRTC server port | 44444 |
+| MAX_DISTANCE | The maximum distance at which users can hear each other. | 20 |
+
 ## Running
 
 Docker Hub : https://hub.docker.com/r/thedrewen/inari

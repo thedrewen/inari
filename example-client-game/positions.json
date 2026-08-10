@@ -1,6 +1,7 @@
 [
     {
         "code" : "user1",
+        "muted": false,
         "position" : [
             0,
             0,
@@ -9,6 +10,7 @@
     },
     {
         "code" : "user2",
+        "muted": false,
         "position" : [
             10,
             0,

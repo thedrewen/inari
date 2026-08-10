@@ -15,9 +15,11 @@ impl App {
         }
     }
 
-    pub fn get_routes(&self) -> impl warp::Filter<> {
-        let root = index(&self.config);
+    pub async fn run(&self) {
+        let port = *self.config.api_port();
+        let routes = index(self.config.app_version().clone());
 
-        root
+        warp::serve(routes)
+            .run(([0, 0, 0, 0], port)).await;
     }
 }

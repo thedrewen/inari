@@ -6,7 +6,7 @@ use rand::{RngExt, distr::Alphanumeric};
 
 use crate::utils::logger;
 
-#[derive(Getters)]
+#[derive(Getters, Clone)]
 #[getset(get = "pub")]
 pub struct Config {
     api_port: u16,

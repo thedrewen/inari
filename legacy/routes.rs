@@ -4,7 +4,7 @@ use warp::{Filter, reply::Reply};
 
 use crate::{core::manager::Manager, handle_client::handle_client};
 
-static NEXT_ID: AtomicUsize = AtomicUsize::new(1);
+
 
 pub async fn all() -> impl Filter<Extract = impl Reply> + Clone {
 

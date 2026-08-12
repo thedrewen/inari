@@ -21,6 +21,10 @@ export class InariService {
     // Internal
     public pageState = signal<PageState>(PageState.WAIT_FOR_CODE);
     public PageState = PageState;
+
+    public isMute = signal(false);
+    public isDaefen = signal(false);
+
     private ws!: WebSocket;
 
     private device!: Device;
@@ -109,7 +113,11 @@ export class InariService {
                 let { consumer_id, kind, rtp_parameters } = value;
 
                 const consumer = await this.consumers_transport.consume({ id: consumer_id, producerId: producer_id, kind, rtpParameters: rtp_parameters });
-                consumer.resume();
+                if (this.isDaefen()) {
+                    consumer.pause();
+                } else {
+                    consumer.resume();
+                }
                 client.consumer = consumer;
 
                 const stream = new MediaStream();
@@ -194,8 +202,27 @@ export class InariService {
         this.producer.resume();
     }
 
-    async disconnect(by_ws: boolean = false) {
+    public async mute() {
+        if (this.isMute()) {
+            this.producer.resume();
+        } else {
+            this.producer.pause();
+        }
 
+        this.isMute.update((v) => !v);
+    }
+
+    public async daefen() {
+        if (this.isDaefen()) {
+            this.clients.forEach((v) => v.consumer?.resume());
+        } else {
+            this.clients.forEach((v) => v.consumer?.pause());
+        }
+
+        this.isDaefen.update((v) => !v);
+    }
+
+    public async disconnect() {
         this.ws.close();
         document.body.style.animation = 'backgroundAnimation 20s linear infinite';
         if (this.pingInterval) {

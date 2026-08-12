@@ -58,6 +58,10 @@ docker run --name inari -e API_KEY=<GENERATE API KEY> -e SERVER_PUBLIC_IP=<YOUR 
 
 By default, the project runs at http://localhost:3030.
 
+## Icons
+
+Icons by Dazzle UI (https://www.svgrepo.com/collection/dazzle-line-icons/)
+
 ## License
 
 This project is licensed under the **GNU Affero General Public License v3.0 (AGPL-3.0)**.

@@ -7,6 +7,6 @@ mod classes;
 
 #[tokio::main]
 async fn main() {
-    let app = App::new();
+    let app = App::new().await;
     app.run().await;
 }

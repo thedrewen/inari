@@ -1,26 +1,31 @@
 use warp::Filter;
 
-use crate::{routes::{index::index, ws::ws}, utils::{config::Config, logger}};
+use crate::{classes::mediasoup_manager::{self, MediaSoupManager}, routes::{index::index, ws::ws}, utils::{config::Config, logger}};
 
 pub struct App {
-    config: Config
+    config: Config,
+    mediasoup_manager: MediaSoupManager
 }
 
 impl App {
-    pub fn new() -> Self {
+    pub async fn new() -> Self {
         let config = Config::new();
-        
         logger::log_start(&config);
+        let mediasoup_manager = MediaSoupManager::new(&config).await;
+        
         
         Self {
-            config
+            config,
+            mediasoup_manager
         }
     }
 
     pub fn get_bundle(&self) -> Bundle {
         let config = self.config.clone();
+        let mediasoup_manager = self.mediasoup_manager.clone();
         Bundle {
-            config
+            config,
+            mediasoup_manager
         }
     }
 
@@ -37,5 +42,6 @@ impl App {
 
 #[derive(Clone)]
 pub struct Bundle {
-    pub config: Config
+    pub config: Config,
+    pub mediasoup_manager: MediaSoupManager
 }

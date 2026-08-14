@@ -10,7 +10,7 @@ use crate::utils::logger;
 #[getset(get = "pub")]
 pub struct Config {
     api_port: u16,
-    webrtc_server_port: usize,
+    webrtc_server_port: u16,
     server_public_ip: String,
     api_key: String,
     is_generated_api_key: bool,
@@ -44,7 +44,7 @@ impl Config {
             .ok()
             .unwrap_or(String::from("127.0.0.1"));
 
-        let webrtc_server_port: usize = env::var("WEBRTC_SERVER_PORT")
+        let webrtc_server_port: u16 = env::var("WEBRTC_SERVER_PORT")
             .ok()
             .and_then(|v| v.parse().ok())
             .unwrap_or(44444);

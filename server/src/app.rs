@@ -1,6 +1,6 @@
 use warp::Filter;
 
-use crate::{classes::mediasoup_manager::{self, MediaSoupManager}, routes::{index::index, ws::ws}, utils::{config::Config, logger}};
+use crate::{classes::mediasoup::mediasoup_manager::{MediaSoupManager}, routes::{index::index, ws::ws}, utils::{config::Config, logger}};
 
 pub struct App {
     config: Config,

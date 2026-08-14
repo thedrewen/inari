@@ -1,3 +1,3 @@
 pub mod client;
 pub mod ws;
-pub mod mediasoup_manager;
+pub mod mediasoup;

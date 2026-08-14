@@ -1,4 +1,4 @@
-use futures_util::{SinkExt, StreamExt};
+use futures_util::{StreamExt};
 use warp::filters::ws::WebSocket;
 
 use crate::app::{Bundle};
@@ -16,7 +16,6 @@ impl Client {
 
     pub async fn handle(self, ws: WebSocket, bundle: Bundle) {
         let (tx, rx) = ws.split();
-
-        
-    } 
+           
+    }
 }

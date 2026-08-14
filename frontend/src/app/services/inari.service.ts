@@ -3,6 +3,7 @@ import { UrlService } from './url.service';
 import { v4 as uuidv4 } from 'uuid';
 import { Device } from 'mediasoup-client';
 import { Consumer, Producer, RtpCapabilities, Transport } from 'mediasoup-client/types';
+import NoSleep from 'nosleep.js';
 
 enum PageState {
     WAIT_FOR_CODE = 0,
@@ -40,6 +41,8 @@ export class InariService {
     public clients_count = signal(1);
 
     private promises_ws: { uuid: string, res: any }[] = [];
+
+    private noSleep: NoSleep = new NoSleep();
 
     async init(authCode: string) {
         return new Promise((res) => {
@@ -200,6 +203,7 @@ export class InariService {
         this.track = media.getTracks()[0];
         this.producer = await this.producer_transport.produce({ track: this.track });
         this.producer.resume();
+        this.noSleep.enable();
     }
 
     public async mute() {
@@ -241,5 +245,6 @@ export class InariService {
         this.producer_transport?.close();
         this.consumers_transport?.close();
         this.pageState.set(PageState.WAIT_FOR_CODE);
+        this.noSleep.disable();
     }
 }

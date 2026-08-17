@@ -58,6 +58,10 @@ docker run --name inari -e API_KEY=<GENERATE API KEY> -e SERVER_PUBLIC_IP=<YOUR 
 
 By default, the project runs at http://localhost:3030.
 
+## Pelican/Pterodactyl
+
+- Download [Egg](./resources/egg-inari.json)
+
 ## Icons
 
 Icons by Dazzle UI (https://www.svgrepo.com/collection/dazzle-line-icons/)

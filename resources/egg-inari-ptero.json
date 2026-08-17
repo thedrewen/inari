@@ -45,7 +45,7 @@
             "default_value": "3030",
             "user_viewable": false,
             "user_editable": false,
-            "rules": "required|int|max:20",
+            "rules": "required|int|max:10000",
             "field_type": "text"
         },
         {
@@ -55,7 +55,7 @@
             "default_value": "30",
             "user_viewable": false,
             "user_editable": false,
-            "rules": "required|int|max:20",
+            "rules": "required|int|max:10000",
             "field_type": "text"
         },
         {
@@ -75,7 +75,7 @@
             "default_value": "44444",
             "user_viewable": false,
             "user_editable": false,
-            "rules": "required|int|max:20",
+            "rules": "required|int|max:10000",
             "field_type": "text"
         }
     ]

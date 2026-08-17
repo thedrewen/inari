@@ -10,7 +10,7 @@
     "description": null,
     "features": [],
     "docker_images": {
-        "thedrewen\/Inari:nightly": "thedrewen\/inari:nightly"
+        "thedrewen\/inari:nightly": "thedrewen\/inari:nightly"
     },
     "file_denylist": [],
     "startup": ".\/inari",
@@ -45,7 +45,7 @@
             "default_value": "3030",
             "user_viewable": false,
             "user_editable": false,
-            "rules": "required|int|max:10000",
+            "rules": "required|int",
             "field_type": "text"
         },
         {
@@ -55,7 +55,7 @@
             "default_value": "30",
             "user_viewable": false,
             "user_editable": false,
-            "rules": "required|int|max:10000",
+            "rules": "required|int",
             "field_type": "text"
         },
         {
@@ -65,7 +65,7 @@
             "default_value": "",
             "user_viewable": false,
             "user_editable": false,
-            "rules": "required|string|max:50",
+            "rules": "required|string",
             "field_type": "text"
         },
         {
@@ -75,7 +75,7 @@
             "default_value": "44444",
             "user_viewable": false,
             "user_editable": false,
-            "rules": "required|int|max:10000",
+            "rules": "required|int",
             "field_type": "text"
         }
     ]

@@ -10,7 +10,7 @@
     "description": null,
     "features": [],
     "docker_images": {
-        "thedrewen\/Inari:nightly": "thedrewen\/Inari:nightly"
+        "thedrewen\/Inari:nightly": "thedrewen\/inari:nightly"
     },
     "file_denylist": [],
     "startup": ".\/inari",

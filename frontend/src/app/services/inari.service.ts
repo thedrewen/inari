@@ -44,7 +44,7 @@ export class InariService {
 
     private noSleep: NoSleep = new NoSleep();
 
-    async init(authCode: string) {
+    async init(authCode: string, channel: String) {
         return new Promise((res) => {
             document.body.style.animation = 'backgroundAnimationSpeed 1s linear infinite';
             this.pageState.set(this.PageState.LOGGING_IN);
@@ -53,7 +53,7 @@ export class InariService {
 
             this.ws.onopen = async () => {
                 console.log('Connected to inari ws !');
-                await this.send('auth', { auth_key: authCode, channel: 'default', is_server: false });
+                await this.send('auth', { auth_key: authCode, channel, is_server: false });
                 this.send_and_receive('rtp_capabilities', {}).then((r: any) => this.init_mediasoup(r));
 
                 this.device = new Device();

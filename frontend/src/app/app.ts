@@ -23,13 +23,18 @@ export class App implements OnInit, OnDestroy {
 
     async login() {
         this.onConnection.set(true);
-        await this.is.init(this.authCode());
+        await this.is.init(this.authCode(), this.channel());
         this.onConnection.set(false);
     }
 
     public authCode = signal('');
+    public channel = signal('default');
 
     updateAuthCode(value: string) {
         this.authCode.set(value);
+    }
+
+    updateChannel(value: string) {
+        this.channel.set(value);
     }
 }

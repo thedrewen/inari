@@ -18,7 +18,7 @@
         "files": "{}",
         "startup": "{\r\n\"done\" : \"Webrtc Server running on\"\r\n}",
         "logs": "{}",
-        "stop": "^c"
+        "stop": "^^C"
     },
     "scripts": {
         "installation": {

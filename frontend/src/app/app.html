@@ -41,8 +41,11 @@
         </h1>
     </header>
     <main>
+        <h3>
+            #{{channel()}}
+        </h3>
         <h2>
-            You are logged in to Inari! Number of users logged in: {{is.clients_count()}}
+            You are logged in to Inari!<br> Number of users logged in: {{is.clients_count()}}
         </h2>
         <div class="buttons">
             <button (click)="is.mute()">

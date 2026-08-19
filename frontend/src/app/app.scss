@@ -27,6 +27,13 @@ main {
         font-size: 1.3rem;
     }
 
+    h3 {
+        width: 400px;
+        text-align: center;
+        max-width: calc(100% - 20px);
+        font-size: 1.0rem;
+    }
+
     .input,
     .button {
         max-width: calc(100% - 20px);

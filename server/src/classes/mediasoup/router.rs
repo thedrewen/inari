@@ -103,7 +103,7 @@ impl InariRouter {
         }
 
         for client in &clients {
-            let Some(mut ws_client) = clients_by_code.get(&client.code).cloned() else { continue };
+            let Some(ws_client) = clients_by_code.get(&client.code).cloned() else { continue };
             ws_client.mute_consumers().await;
             for client_target in &clients {
                 if client.code == client_target.code { continue; }

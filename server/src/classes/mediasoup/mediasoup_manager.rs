@@ -1,13 +1,15 @@
 use std::{collections::HashMap, net::Ipv4Addr, sync::Arc};
 
 use event_listener_primitives::HandlerId;
-use mediasoup::{router, types::data_structures::ListenInfo, webrtc_server::{WebRtcServer, WebRtcServerListenInfos, WebRtcServerOptions}, worker::{Worker, WorkerSettings}, worker_manager::WorkerManager};
+use getset::Getters;
+use mediasoup::{types::data_structures::ListenInfo, webrtc_server::{WebRtcServer, WebRtcServerListenInfos, WebRtcServerOptions}, worker::{Worker, WorkerSettings}, worker_manager::WorkerManager};
 use tokio::sync::RwLock;
 
 use crate::{classes::mediasoup::router::InariRouter, utils::{config::Config, logger}};
 
-#[derive(Clone)]
+#[derive(Clone, Getters)]
 pub struct MediaSoupManager {
+    #[getset(get = "pub")]
     webrtc_server: WebRtcServer,
     worker: Worker,
     routers: Arc<RwLock<HashMap<String, InariRouter>>>,
@@ -48,7 +50,7 @@ impl MediaSoupManager {
             logger::log_error("WebrtcServer Closed !".into());
         });
 
-        let default_router = InariRouter::new(&worker, "default".into(), true).await;
+        let default_router = InariRouter::new(&worker, &config, "default".into(), true).await;
         let mut routers = HashMap::new();
         routers.insert("default".into(), default_router);
 
@@ -62,12 +64,12 @@ impl MediaSoupManager {
     }
 
 
-    pub async fn get_router(&self, name: String) -> InariRouter {
+    pub async fn get_router(&self, name: String, config: &Config) -> InariRouter {
         if let Some(router) = self.routers.read().await.get(&name) {
             return router.clone();
         } 
 
-        let router = InariRouter::new(&self.worker, name.clone(), false).await;
+        let router = InariRouter::new(&self.worker, &config, name.clone(), false).await;
 
         self.routers.write().await.insert(name, router.clone());
 

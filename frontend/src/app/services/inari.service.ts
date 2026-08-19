@@ -53,8 +53,8 @@ export class InariService {
 
             this.ws.onopen = async () => {
                 console.log('Connected to inari ws !');
+                await this.send('auth', { auth_key: authCode, channel: 'default', is_server: false });
                 this.send_and_receive('rtp_capabilities', {}).then((r: any) => this.init_mediasoup(r));
-                await this.send('link', { code: authCode });
 
                 this.device = new Device();
                 this.pingInterval = setInterval(() => {

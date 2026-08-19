@@ -14,7 +14,7 @@ pub struct Config {
     server_public_ip: String,
     api_key: String,
     is_generated_api_key: bool,
-    max_distance: usize,
+    max_distance: f64,
     app_version: String
 }
 
@@ -49,10 +49,10 @@ impl Config {
             .and_then(|v| v.parse().ok())
             .unwrap_or(44444);
 
-        let max_distance: usize = env::var("MAX_DISTANCE")
+        let max_distance: f64 = env::var("MAX_DISTANCE")
             .ok()
             .and_then(|v| v.parse().ok())
-            .unwrap_or(20);
+            .unwrap_or(20.0);
 
         let app_version = env!("CARGO_PKG_VERSION").to_string();
 

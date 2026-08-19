@@ -1,19 +1,25 @@
-use std::{num::{NonZeroU8, NonZeroU32}, sync::{Arc, atomic::AtomicUsize}};
+use std::{collections::HashMap, num::{NonZeroU8, NonZeroU32}, sync::{Arc, atomic::AtomicUsize}};
 
-use mediasoup::{router::{Router, RouterOptions}, types::rtp_parameters::{MimeTypeAudio, RtpCapabilitiesFinalized, RtpCodecCapability, RtpCodecParametersParameters}, worker::Worker};
+use getset::Getters;
+use mediasoup::{router::{Router, RouterOptions}, types::rtp_parameters::{MimeTypeAudio, RtpCapabilitiesFinalized, RtpCodecCapability, RtpCodecParametersParameters}, webrtc_transport::{WebRtcTransport, WebRtcTransportOptions}, worker::Worker};
+use tokio::sync::RwLock;
+use uuid::Uuid;
 
-use crate::{classes::client::Client, utils::logger};
+use crate::{classes::{client::Client, ws::{requests::ClientServerDefinition, responses::{WsResponses, WsResponsesKind}}}, utils::{config::Config, logger}};
 
-#[derive(Clone)]
+#[derive(Clone, Getters)]
+#[getset(get = "pub")]
 pub struct InariRouter {
     router: Router,
     name: String,
     permanent: bool,
-    client_count: Arc<AtomicUsize>
+    max_distance: f64,
+    client_count: Arc<AtomicUsize>,
+    clients: Arc<RwLock<HashMap<usize, Client>>>
 }
 
 impl InariRouter {
-    pub async fn new(worker: &Worker, name: String, permanent: bool) -> Self {
+    pub async fn new(worker: &Worker, config: &Config, name: String, permanent: bool) -> Self {
 
         let audio_codec = RtpCodecCapability::Audio {
             mime_type: MimeTypeAudio::Opus,
@@ -36,7 +42,9 @@ impl InariRouter {
             router,
             name,
             permanent,
-            client_count: Arc::new(AtomicUsize::new(0))
+            max_distance: *config.max_distance(),
+            client_count: Arc::new(AtomicUsize::new(0)),
+            clients: Arc::new(RwLock::new(HashMap::new()))
         }
     }
 
@@ -52,9 +60,62 @@ impl InariRouter {
     pub async fn remove_client(&self, client: &Client) {
         logger::log_info(format!("Client #{} has logged out {}", client.id(), self.name));
         self.client_count.fetch_sub(1, std::sync::atomic::Ordering::Relaxed);
+        self.clients.write().await.remove(client.id());
 
         if !self.permanent && self.client_count.load(std::sync::atomic::Ordering::Relaxed) == 0 {
             client.bundle().mediasoup_manager.close_router(self.name.clone()).await;
+        }
+
+        if let Some(producer) = client.producer() {
+            for client in self.clients.read().await.values() {
+                let uuid = Uuid::new_v4().to_string();
+                client.send(
+                    WsResponses {
+                        kind: WsResponsesKind::RemoveClient { id: producer.id() },
+                        transaction_uuid: uuid
+                    }
+                );
+            }
+        }
+    }
+
+    pub async fn register_client(&self, client: Client) {
+        self.clients.write().await.insert(*client.id(), client);
+    }
+
+    pub async fn create_transport(&self, client: &Client) -> WebRtcTransport {
+        let options = WebRtcTransportOptions::new_with_server(client.bundle().mediasoup_manager.webrtc_server().clone());
+        let transport = self.router.create_webrtc_transport(options).await.unwrap(); 
+        transport
+    }
+
+
+
+    pub async fn handle_client_as_server(&self, clients: Vec<ClientServerDefinition>) {
+        let mut clients_by_code: HashMap<String, Client> = HashMap::new();
+
+        for client in self.clients.read().await.values() {
+            if clients.iter().any(|c| c.code == client.code().clone())
+                && client.producer().is_some()
+            {
+                clients_by_code.insert(client.code().clone(), client.clone());
+            }
+        }
+
+        for client in &clients {
+            let Some(mut ws_client) = clients_by_code.get(&client.code).cloned() else { continue };
+            ws_client.mute_consumers().await;
+            for client_target in &clients {
+                if client.code == client_target.code { continue; }
+                let Some(ws_client_target) = clients_by_code.get(&client_target.code) else { continue };
+                let Some(producer) = ws_client_target.producer() else { continue };
+
+                if client.distance_to(client_target) > self.max_distance || client_target.muted {
+                    ws_client.mute_consumer(producer.id()).await;
+                } else {
+                    ws_client.resume_consumer(producer.id()).await;
+                }
+            }
         }
     }
 }

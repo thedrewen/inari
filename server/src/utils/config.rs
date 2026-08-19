@@ -29,7 +29,7 @@ impl Config {
             .unwrap_or(3030);
 
         let mut is_generated_api_key = false;
-        let api_key: String = env::var("API_KEY").ok().unwrap_or({
+        let api_key: String = env::var("API_KEY").ok().unwrap_or_else(|| {
             let generated_api_key = rand::rng()
                 .sample_iter(&Alphanumeric)
                 .take(14)

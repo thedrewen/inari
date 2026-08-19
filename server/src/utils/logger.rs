@@ -31,4 +31,8 @@ pub fn log_start(config: &Config) {
         config.app_version(),
         config.max_distance()    
     );
+    
+    if *config.is_generated_api_key() {
+        log_info(format!("Auto Generated Api key : {}", config.api_key()));
+    }
 }

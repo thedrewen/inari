@@ -13,7 +13,7 @@ pub fn ws(bundle: Bundle) -> impl Filter<Error = Rejection, Extract = impl Reply
         .and(bundle_filter)
         .map(|ws: warp::ws::Ws, bundle| {
             let id = NEXT_ID.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-            let client = Client::new(id);
-            ws.on_upgrade(move |websocket| Client::handle(client, websocket, bundle) )
+            let client = Client::new(id, bundle);
+            ws.on_upgrade(move |websocket| Client::handle(client, websocket) )
         })
 }

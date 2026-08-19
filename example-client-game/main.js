@@ -14,7 +14,7 @@ let interval;
 
 ws.on('open', () => {
     console.log('Connected !');
-    send('auth', {api_key: '1234'});
+    send('auth', {channel: 'default', auth_key: '1234', is_server: true});
 
     interval = setInterval(async () => {
         const data = await readFile('./positions.json', 'utf-8');

@@ -32,6 +32,7 @@ pub struct Client {
     bundle: Bundle,
     producer_transport: Option<WebRtcTransport>,
     consumers_transport: Option<WebRtcTransport>,
+    is_auth: bool,
 
     producer: Option<Producer>,
     consumers: Arc<RwLock<HashMap<ProducerId, Consumer>>>
@@ -48,6 +49,7 @@ impl Client {
             bundle,
             consumers_transport: None,
             producer_transport: None,
+            is_auth: false,
 
             producer: None,
             consumers: Arc::new(RwLock::new(HashMap::new()))
@@ -93,10 +95,11 @@ impl Client {
                             channel,
                         } => {
 
-                            if self.is_server_client || self.code == String::new() {
+                            if self.is_auth {
                                 break;
                             }
 
+                            self.is_auth = true;
                             self.is_server_client = is_server;
 
                             if is_server {

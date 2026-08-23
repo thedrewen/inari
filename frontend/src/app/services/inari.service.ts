@@ -1,4 +1,4 @@
-import { createPlatform, inject, Service, signal } from '@angular/core';
+import { inject, Service, signal } from '@angular/core';
 import { UrlService } from './url.service';
 import { v4 as uuidv4 } from 'uuid';
 import { Device } from 'mediasoup-client';

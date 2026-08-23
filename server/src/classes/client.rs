@@ -92,6 +92,11 @@ impl Client {
                             auth_key,
                             channel,
                         } => {
+
+                            if self.is_server_client || self.code == String::new() {
+                                break;
+                            }
+
                             self.is_server_client = is_server;
 
                             if is_server {
@@ -138,16 +143,20 @@ impl Client {
                                 && let Some(channel) = &self.channel
                             {
                                 let transport = channel.create_transport(&self).await;
-                                self.set_transport(transport.clone(), is_producer);
-                                self.send(WsResponses {
-                                    kind: WsResponsesKind::CreateTransport {
-                                        id: transport.id(),
-                                        ice_parameters: transport.ice_parameters().clone(),
-                                        ice_candidates: transport.ice_candidates().clone(),
-                                        dtls_parameters: transport.dtls_parameters().clone(),
-                                    },
-                                    transaction_uuid: value.transaction_uuid.clone(),
-                                });
+                                let is_success = self.set_transport(transport.clone(), is_producer);
+                                if is_success {
+                                    self.send(WsResponses {
+                                        kind: WsResponsesKind::CreateTransport {
+                                            id: transport.id(),
+                                            ice_parameters: transport.ice_parameters().clone(),
+                                            ice_candidates: transport.ice_candidates().clone(),
+                                            dtls_parameters: transport.dtls_parameters().clone(),
+                                        },
+                                        transaction_uuid: value.transaction_uuid.clone(),
+                                    });
+                                } else {
+                                    break;
+                                }
                             }
                         }
                         WsRequestsKind::ConnectTransport {
@@ -161,9 +170,13 @@ impl Client {
                             };
 
                             if let Some(transport) = transport {
-                                let _ = transport
+                                let success = transport
                                     .connect(WebRtcTransportRemoteParameters { dtls_parameters })
                                     .await;
+
+                                if success.is_err() {
+                                    break;
+                                }
 
                                 self.send(WsResponses {
                                     kind: WsResponsesKind::ConnectTransport {},
@@ -176,9 +189,10 @@ impl Client {
                             rtp_parameters,
                         } => {
                             if self.is_connected_as_client() {
-                                self.produce(kind, rtp_parameters).await;
+                                let success = self.produce(kind, rtp_parameters).await;
                                 if let Some(producer) = self.producer.clone()
                                     && let Some(channel) = &self.channel
+                                    && success
                                 {
                                     self.send(WsResponses {
                                         kind: WsResponsesKind::Produce {
@@ -258,16 +272,20 @@ impl Client {
         !self.is_server_client && self.channel.is_some()
     }
 
-    pub fn set_transport(&mut self, transport: WebRtcTransport, is_producer: bool) {
+    pub fn set_transport(&mut self, transport: WebRtcTransport, is_producer: bool) -> bool {
         if is_producer && self.producer_transport.is_none() {
             self.producer_transport = Some(transport);
+            return true;
         } else if !is_producer && self.consumers_transport.is_none() {
             self.consumers_transport = Some(transport);
+            return true;
         }
+
+        false
     }
 
-    pub async fn produce(&mut self, kind: MediaKind, rtp_parameters: RtpParameters) {
-        if let Some(transport) = self.producer_transport.clone() {
+    pub async fn produce(&mut self, kind: MediaKind, rtp_parameters: RtpParameters) -> bool {
+        if let Some(transport) = self.producer_transport.clone() && self.producer.is_none() {
             let result = transport
                 .produce(ProducerOptions::new(kind, rtp_parameters))
                 .await;
@@ -278,8 +296,12 @@ impl Client {
                 let _ = producer.resume().await;
                 self.producer = Some(producer);
                 channel.register_client(self.clone()).await;
+
+                return true;
             }
         }
+
+        false
     }
 
     pub async fn consume(&mut self, producer_id: ProducerId, rtp_capabilities: RtpCapabilities) -> Option<Consumer> {

@@ -9,7 +9,7 @@ pub fn log_info(message: String) {
 
 pub fn log_error(message: String) {
     let date = chrono::offset::Utc::now().with_timezone(&Brussels).format("%d/%m/%Y %H:%M:%S");
-    println!("[ERROR][{}] {}", date, message);
+    eprintln!("[ERROR][{}] {}", date, message);
 }
 
 pub fn log_start(config: &Config) {

@@ -65,13 +65,15 @@ impl MediaSoupManager {
 
 
     pub async fn get_router(&self, name: String, config: &Config) -> InariRouter {
-        if let Some(router) = self.routers.read().await.get(&name) {
+        let mut routers_lock = self.routers.write().await;
+
+        if let Some(router) = routers_lock.get(&name) {
             return router.clone();
         } 
 
         let router = InariRouter::new(&self.worker, &config, name.clone(), false).await;
 
-        self.routers.write().await.insert(name, router.clone());
+        routers_lock.insert(name, router.clone());
 
         router
     }

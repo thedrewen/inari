@@ -926,7 +926,7 @@ dependencies = [
 
 [[package]]
 name = "inari"
-version = "1.1.1-nightly"
+version = "1.2.0-nightly"
 dependencies = [
  "chrono",
  "chrono-tz",
@@ -1097,9 +1097,9 @@ checksum = "b6e8aaa3f231bb4bd57b84b2d5dc3ae7f350265df8aa96492e0bc394a1571909"
 
 [[package]]
 name = "mediasoup"
-version = "0.25.2"
+version = "0.27.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3103791d90ba87d14b4be5184774270566d74a5c07a4b7d74bd0b65ac7bdbd7c"
+checksum = "c79e3ce92e845fb431052e2bf0083a2c9c3772367588874a891826b50dda4c33"
 dependencies = [
  "async-channel",
  "async-executor",
@@ -1130,9 +1130,9 @@ dependencies = [
 
 [[package]]
 name = "mediasoup-sys"
-version = "0.15.2"
+version = "0.17.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b37b5469de2ba73cfc6cf9f4c87937dd1fb510a06f9d63ee4329833782da8015"
+checksum = "b4193421652913559e68e6640d5fbe862241f313fa00cc446561e0d3f69ec684"
 dependencies = [
  "planus",
  "planus-codegen",
@@ -2063,9 +2063,9 @@ checksum = "ebc1c04c71510c7f702b52b7c350734c9ff1295c464a03335b00bb84fc54f853"
 
 [[package]]
 name = "uuid"
-version = "1.24.0"
+version = "1.25.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bf3923a6f5c4c6382e0b653c4117f48d631ea17f38ed86e2a828e6f7412f5239"
+checksum = "f053576934f05a761a402421fbbe3d425d9366f75f978806a037b3ca481abecc"
 dependencies = [
  "getrandom 0.4.3",
  "js-sys",

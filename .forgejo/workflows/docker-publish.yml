@@ -28,7 +28,7 @@ jobs:
 
       - name: Build and push
         run: |
-          docker build \
+          docker buildx build \
             -t thedrewen/inari:${{ steps.meta.outputs.full_tag }} \
             -t thedrewen/inari:${{ steps.meta.outputs.prefix }} \
             .

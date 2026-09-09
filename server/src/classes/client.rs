@@ -21,6 +21,11 @@ use crate::{
     utils::logger,
 };
 
+struct LocalConsumer {
+    consumer: Consumer,
+    muted: bool
+}
+
 #[derive(Getters, Clone)]
 #[getset(get = "pub")]
 pub struct Client {
@@ -35,7 +40,7 @@ pub struct Client {
     is_auth: bool,
 
     producer: Option<Producer>,
-    consumers: Arc<RwLock<HashMap<ProducerId, Consumer>>>
+    consumers: Arc<RwLock<HashMap<ProducerId, LocalConsumer>>>
 }
 
 impl Client {
@@ -312,7 +317,7 @@ impl Client {
             let consumer = transport.consume(ConsumerOptions::new(producer_id, rtp_capabilities)).await;
 
             if let Some(consumer) = consumer.ok() {
-                self.consumers.write().await.insert(producer_id, consumer.clone());
+                self.consumers.write().await.insert(producer_id, LocalConsumer { consumer: consumer.clone(), muted: true });
                 let _ = consumer.pause().await;
                 return Some(consumer);
             }   
@@ -323,20 +328,29 @@ impl Client {
 
 
     pub async fn mute_consumers(&self) {
-        for consumer in self.consumers.read().await.values() {
-            let _ = consumer.pause().await;
+        for consumer in self.consumers.write().await.values_mut() {
+            if !consumer.muted {
+                let _ = consumer.consumer.pause().await;
+                consumer.muted = true;
+            }
         }
     }
 
     pub async fn mute_consumer(&self, producer_id: ProducerId) {
-        if let Some(consumer) = self.consumers.read().await.get(&producer_id) {
-            let _ = consumer.pause().await;
+        if let Some(consumer) = self.consumers.write().await.get_mut(&producer_id) {
+            if !consumer.muted {
+                let _ = consumer.consumer.pause().await;
+                consumer.muted = true;
+            }
         } 
     }
 
     pub async fn resume_consumer(&self, producer_id: ProducerId) {
-        if let Some(consumer) = self.consumers.read().await.get(&producer_id) {
-            let _ = consumer.resume().await;
+        if let Some(consumer) = self.consumers.write().await.get_mut(&producer_id) {
+            if consumer.muted {
+                let _ = consumer.consumer.resume().await;
+                consumer.muted = false;
+            }
         } 
     }
 }

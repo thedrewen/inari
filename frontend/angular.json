@@ -59,6 +59,11 @@
           "defaultConfiguration": "production"
         },
         "serve": {
+          "options": {
+            "allowedHosts": [
+              "dev-inari.thedrewen.com"
+            ]
+          },
           "builder": "@angular/build:dev-server",
           "configurations": {
             "production": {

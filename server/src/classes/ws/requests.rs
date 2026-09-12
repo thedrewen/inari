@@ -16,6 +16,10 @@ impl ClientServerDefinition {
         let dz = self.position[2] - target.position[2];
         (dx * dx + dy * dy + dz * dz).sqrt()
     }
+
+    pub fn related_position(&self, target: &ClientServerDefinition) -> [f64; 3] {
+        [target.position[0] - self.position[0], target.position[1] - self.position[1], target.position[2] - self.position[2]]
+    }
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]

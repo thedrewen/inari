@@ -2,7 +2,7 @@ import { WebSocket } from "ws";
 import { v4 } from "uuid";
 import { readFile } from 'fs/promises'
  
-const ws = new WebSocket("ws://localhost:3030/ws"); // Your address
+const ws = new WebSocket("wss://dev-inari.thedrewen.com/ws"); // Your address
 
 function send(kind, data) {
     try {

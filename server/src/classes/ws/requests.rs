@@ -1,5 +1,3 @@
-use std::f64::consts::PI;   
-
 use mediasoup::{producer::ProducerId, types::{data_structures::DtlsParameters, rtp_parameters::{MediaKind, RtpCapabilities, RtpParameters}}};
 use serde::{Deserialize, Serialize};
 
@@ -8,7 +6,7 @@ use serde::{Deserialize, Serialize};
 pub struct ClientServerDefinition {
     pub code: String,
     pub position: [f64; 3],
-    pub head: [f64; 2], // Pitch Yaw
+    pub head: [f64; 3], // Pitch Yaw
     pub muted: bool
 }
 
@@ -25,16 +23,6 @@ impl ClientServerDefinition {
             target.position[0] - self.position[0], // x
             target.position[1] - self.position[1], // y
             target.position[2] - self.position[2] // z
-        ]
-    }
-
-    pub fn head_location(&self) -> [f64; 3] {
-        let pitch_rad = self.head[0] * (PI / 180.0);
-        let yaw_rad = self.head[1] * (PI / 180.0);
-        [
-            -(yaw_rad.sin()) * pitch_rad.cos(), // hx
-            -(pitch_rad.sin()), // hy
-            yaw_rad.cos() * pitch_rad.cos() // hz
         ]
     }
 }

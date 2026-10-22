@@ -136,7 +136,7 @@ impl InariRouter {
             }
             
             let uuid = Uuid::new_v4().to_string();
-            ws_client.send(WsResponses { kind: WsResponsesKind::ProducerHead { orientation: client.head_location() }, transaction_uuid: uuid });
+            ws_client.send(WsResponses { kind: WsResponsesKind::ProducerHead { orientation: client.head.clone() }, transaction_uuid: uuid });
         }
     }
 }

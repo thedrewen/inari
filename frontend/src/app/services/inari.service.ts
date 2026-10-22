@@ -111,17 +111,17 @@ export class InariService {
                     this.clients = this.clients.filter((c) => c.producer_id !== data.data.id);
                     this.clients_count.update(() => this.clients.length + 1);
                 } else if (data.kind == 'producer_head') {
-                    this.audioContext.listener.forwardX.setTargetAtTime(data.data.orientation[0], this.audioContext.currentTime, 0.3);
-                    this.audioContext.listener.forwardY.setTargetAtTime(data.data.orientation[1], this.audioContext.currentTime, 0.3);
-                    this.audioContext.listener.forwardZ.setTargetAtTime(data.data.orientation[2], this.audioContext.currentTime, 0.3);
+                    this.audioContext.listener.forwardX.setTargetAtTime(data.data.orientation[0], this.audioContext.currentTime, 0.1);
+                    this.audioContext.listener.forwardY.setTargetAtTime(data.data.orientation[1], this.audioContext.currentTime, 0.1);
+                    this.audioContext.listener.forwardZ.setTargetAtTime(data.data.orientation[2], this.audioContext.currentTime, 0.1);
                 } else if (data.kind == 'consumer_related_position') {
                     const { position, producer_id } = data.data;
                     
                     const client = this.clients.find((c) => c.producer_id == producer_id);
                     if (client) {
-                        client.panner?.positionX.setTargetAtTime(position[0], this.audioContext.currentTime, 0.3);
-                        client.panner?.positionY.setTargetAtTime(position[1], this.audioContext.currentTime, 0.3);
-                        client.panner?.positionZ.setTargetAtTime(position[2], this.audioContext.currentTime, 0.3);
+                        client.panner?.positionX.setTargetAtTime(position[0], this.audioContext.currentTime, 0.1);
+                        client.panner?.positionY.setTargetAtTime(position[1], this.audioContext.currentTime, 0.1);
+                        client.panner?.positionZ.setTargetAtTime(position[2], this.audioContext.currentTime, 0.1);
                     }
                 }
             }

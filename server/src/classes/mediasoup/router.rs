@@ -89,31 +89,46 @@ impl InariRouter {
         transport
     }
 
-
-
+    // Sorry for my english, i'm belgian :)
     pub async fn handle_client_as_server(&self, clients: Vec<ClientServerDefinition>) {
-        let mut clients_by_code: HashMap<String, Client> = HashMap::new();
+        let mut clients_by_code: HashMap<String, Client> = HashMap::new(); // Mapping Code -> Client
 
-        for client in self.clients.read().await.values() {
+        for client in self.clients.read().await.values() { // Iterate over each client.
+            // If the client code matches a code used by a connector's client 
+            // and if client has producer ("Producer" = Audio stream from the microphone. If there is one, lol.).
             if clients.iter().any(|c| c.code == client.code().clone())
                 && client.producer().is_some()
             {
+                // Insert map code -> real client (clone why ? Because a lot of elements in client are shared)
                 clients_by_code.insert(client.code().clone(), client.clone());
             }
         }
 
+        // for connector's client in connector's payload
         for client in &clients {
+            // Get Connected Client from connector's client code. 
+            // Continue loop else.
             let Some(ws_client) = clients_by_code.get(&client.code).cloned() else { continue };
+            
+            // Mute all consumers for the client. ("Consumer" = Audio stream from other clients)
             ws_client.mute_consumers().await;
+            
+            // for connector's client in connector's payload
             for client_target in &clients {
-                if client.code == client_target.code { continue; }
+                if client.code == client_target.code { continue; } // ignored self
+                
+                // Get client only if in connector's payload
+                // continue loop else.
                 let Some(ws_client_target) = clients_by_code.get(&client_target.code) else { continue };
+                // Get producer if exist, else continue loop. (No producer ? Get lost! )
                 let Some(producer) = ws_client_target.producer() else { continue };
 
+                // Get distance between client A and client B or client is force muted by connector
                 if client.distance_to(client_target) > self.max_distance || client_target.muted {
-                    ws_client.mute_consumer(producer.id()).await;
+                    ws_client.mute_consumer(producer.id()).await; // Mute client B for client A
                 } else {
-                    ws_client.resume_consumer(producer.id()).await;
+                    ws_client.resume_consumer(producer.id()).await; // UnMute client B for client A
+                    
                 }
             }
         }

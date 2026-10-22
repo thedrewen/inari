@@ -81,7 +81,6 @@ impl Client {
         while let Some(result) = rx.next().await {
             match result {
                 Ok(msg) => {
-                    dbg!(msg.clone());
                     let value = msg.to_str();
                     if value.is_err() {
                         continue;

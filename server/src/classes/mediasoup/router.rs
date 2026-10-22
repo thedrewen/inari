@@ -128,7 +128,10 @@ impl InariRouter {
                     ws_client.mute_consumer(producer.id()).await; // Mute client B for client A
                 } else {
                     ws_client.resume_consumer(producer.id()).await; // UnMute client B for client A
-                    
+
+                    // Send related position of client B to client A
+                    let uuid = Uuid::new_v4().to_string();
+                    ws_client.send(WsResponses { kind: WsResponsesKind::ConsumerRelatedPosition { position: client.related_position(client_target), producer_id: producer.id() }, transaction_uuid: uuid });
                 }
             }
         }

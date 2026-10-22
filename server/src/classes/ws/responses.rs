@@ -14,6 +14,8 @@ pub enum WsResponsesKind {
     AddClients { ids: Vec<ProducerId> },
     RemoveClient { id: ProducerId },
     Consume { consumer_id: ConsumerId, kind: MediaKind, rtp_parameters: RtpParameters },
+    ConsumerRelatedPosition { position: [f64; 3], producer_id: ProducerId },
+
     // Server
     Auth { }
 }

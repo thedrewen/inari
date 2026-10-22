@@ -16,9 +16,9 @@
         "code" : "user2",
         "muted": false,
         "position" : [
-            1,
             0,
-            15
+            0,
+            10
         ],
         "head" : [
             0,

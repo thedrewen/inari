@@ -18,7 +18,7 @@ pub enum WsResponsesKind {
     ProducerHead { orientation: [f64; 3] },
     
     // Server
-    Auth { }
+    Auth { max_distance: f64 }
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]

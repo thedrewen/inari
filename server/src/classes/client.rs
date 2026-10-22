@@ -10,15 +10,13 @@ use uuid::Uuid;
 use warp::filters::ws::{Message, WebSocket};
 
 use crate::{
-    app::Bundle,
-    classes::{
+    app::Bundle, classes::{
         mediasoup::router::InariRouter,
         ws::{
             requests::{WsRequests, WsRequestsKind},
             responses::{WsResponses, WsResponsesKind},
         },
-    },
-    utils::logger,
+    }, utils::{config, logger},
 };
 
 struct LocalConsumer {
@@ -125,10 +123,11 @@ impl Client {
 
                             let router = self.bundle.mediasoup_manager.get_router(channel, &self.bundle.config).await;
                             router.add_client(&self);
+                            let max_distance = *router.max_distance();
                             self.channel = Some(router);
 
                             self.send(WsResponses {
-                                kind: WsResponsesKind::Auth {},
+                                kind: WsResponsesKind::Auth { max_distance },
                                 transaction_uuid: value.transaction_uuid.clone(),
                             });
                         }

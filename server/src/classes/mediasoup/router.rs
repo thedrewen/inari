@@ -134,6 +134,9 @@ impl InariRouter {
                     ws_client.send(WsResponses { kind: WsResponsesKind::ConsumerRelatedPosition { position: client.related_position(client_target), producer_id: producer.id() }, transaction_uuid: uuid });
                 }
             }
+            
+            let uuid = Uuid::new_v4().to_string();
+            ws_client.send(WsResponses { kind: WsResponsesKind::ProducerHead { orientation: client.head_location() }, transaction_uuid: uuid });
         }
     }
 }

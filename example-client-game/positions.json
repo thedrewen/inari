@@ -6,13 +6,21 @@
             0,
             0,
             0
+        ],
+        "head" : [
+            0,
+            0
         ]
     },
     {
         "code" : "user2",
         "muted": false,
         "position" : [
-            20,
+            1,
+            0,
+            15
+        ],
+        "head" : [
             0,
             0
         ]

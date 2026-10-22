@@ -30,3 +30,23 @@ ws.on('close', () => {
     console.log('Connection closed !');
     clearInterval(interval);
 });
+
+
+/*
+
+
+{
+    "code" : "user1", // User Unique Code
+    "muted": false, // Muted for everyone
+    "position" : [
+        0, // x
+        0, // y = Same as minecraft
+        0 // z
+    ],
+    "head" : [
+        0, // Pitch
+        0 // Yaw
+    ]
+}
+
+*/

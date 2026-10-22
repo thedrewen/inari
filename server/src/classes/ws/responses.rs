@@ -15,7 +15,8 @@ pub enum WsResponsesKind {
     RemoveClient { id: ProducerId },
     Consume { consumer_id: ConsumerId, kind: MediaKind, rtp_parameters: RtpParameters },
     ConsumerRelatedPosition { position: [f64; 3], producer_id: ProducerId },
-
+    ProducerHead { orientation: [f64; 3] },
+    
     // Server
     Auth { }
 }

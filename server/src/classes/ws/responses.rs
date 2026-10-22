@@ -1,6 +1,12 @@
 use mediasoup::{consumer::ConsumerId, producer::ProducerId, transport::TransportId, types::{data_structures::{DtlsParameters, IceCandidate, IceParameters}, rtp_parameters::{MediaKind, RtpCapabilitiesFinalized, RtpParameters}}};
 use serde::{Deserialize, Serialize};
 
+#[derive(Serialize, Debug, Deserialize, Clone)]
+pub struct ConsumerPosition {
+    pub position: [f64; 3],
+    pub producer_id: ProducerId
+}
+
 #[derive(Serialize, Deserialize, Clone, Debug)]
 #[serde( tag = "kind", content = "data", rename_all = "snake_case" )]
 pub enum WsResponsesKind {
@@ -14,7 +20,7 @@ pub enum WsResponsesKind {
     AddClients { ids: Vec<ProducerId> },
     RemoveClient { id: ProducerId },
     Consume { consumer_id: ConsumerId, kind: MediaKind, rtp_parameters: RtpParameters },
-    ConsumerRelatedPosition { position: [f64; 3], producer_id: ProducerId },
+    ConsumersRelatedPosition { consumers: Vec<ConsumerPosition> },
     ProducerHead { orientation: [f64; 3] },
     
     // Server

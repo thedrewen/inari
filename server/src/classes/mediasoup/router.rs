@@ -5,7 +5,7 @@ use mediasoup::{router::{Router, RouterOptions}, types::rtp_parameters::{MimeTyp
 use tokio::sync::RwLock;
 use uuid::Uuid;
 
-use crate::{classes::{client::Client, ws::{requests::ClientServerDefinition, responses::{WsResponses, WsResponsesKind}}}, utils::{config::Config, logger}};
+use crate::{classes::{client::Client, ws::{requests::ClientServerDefinition, responses::{ConsumerPosition, WsResponses, WsResponsesKind}}}, utils::{config::Config, logger}};
 
 #[derive(Clone, Getters)]
 #[getset(get = "pub")]
@@ -112,6 +112,8 @@ impl InariRouter {
             
             // Mute all consumers for the client. ("Consumer" = Audio stream from other clients)
             ws_client.mute_consumers().await;
+
+            let mut related_positions: Vec<ConsumerPosition> = vec![];
             
             // for connector's client in connector's payload
             for client_target in &clients {
@@ -128,13 +130,13 @@ impl InariRouter {
                     ws_client.mute_consumer(producer.id()).await; // Mute client B for client A
                 } else {
                     ws_client.resume_consumer(producer.id()).await; // UnMute client B for client A
-
-                    // Send related position of client B to client A
-                    let uuid = Uuid::new_v4().to_string();
-                    ws_client.send(WsResponses { kind: WsResponsesKind::ConsumerRelatedPosition { position: client.related_position(client_target), producer_id: producer.id() }, transaction_uuid: uuid });
+                    related_positions.push(ConsumerPosition { position: client.related_position(client_target), producer_id: producer.id().clone() });
                 }
             }
             
+            // Send related position of client B to client A
+            let uuid = Uuid::new_v4().to_string();
+            ws_client.send(WsResponses { kind: WsResponsesKind::ConsumersRelatedPosition { consumers: related_positions }, transaction_uuid: uuid });
             let uuid = Uuid::new_v4().to_string();
             ws_client.send(WsResponses { kind: WsResponsesKind::ProducerHead { orientation: client.head.clone() }, transaction_uuid: uuid });
         }

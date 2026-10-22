@@ -114,15 +114,17 @@ export class InariService {
                     this.audioContext.listener.forwardX.setTargetAtTime(data.data.orientation[0], this.audioContext.currentTime, 0.1);
                     this.audioContext.listener.forwardY.setTargetAtTime(data.data.orientation[1], this.audioContext.currentTime, 0.1);
                     this.audioContext.listener.forwardZ.setTargetAtTime(data.data.orientation[2], this.audioContext.currentTime, 0.1);
-                } else if (data.kind == 'consumer_related_position') {
-                    const { position, producer_id } = data.data;
+                } else if (data.kind == 'consumers_related_position') {
+                    const { consumers } = data.data;
                     
-                    const client = this.clients.find((c) => c.producer_id == producer_id);
-                    if (client) {
-                        client.panner?.positionX.setTargetAtTime(position[0], this.audioContext.currentTime, 0.1);
-                        client.panner?.positionY.setTargetAtTime(position[1], this.audioContext.currentTime, 0.1);
-                        client.panner?.positionZ.setTargetAtTime(position[2], this.audioContext.currentTime, 0.1);
-                    }
+                    consumers.forEach((c: { position: number[], producer_id: string }) => {
+                        const client = this.clients.find((c1) => c1.producer_id == c.producer_id);
+                        if (client) {
+                            client.panner?.positionX.setTargetAtTime(c.position[0], this.audioContext.currentTime, 0.1);
+                            client.panner?.positionY.setTargetAtTime(c.position[1], this.audioContext.currentTime, 0.1);
+                            client.panner?.positionZ.setTargetAtTime(c.position[2], this.audioContext.currentTime, 0.1);
+                        }
+                    });
                 }
             }
         });
@@ -162,7 +164,7 @@ export class InariService {
                 const audio = new Audio();
                 audio.muted = true;
                 audio.srcObject = stream;
-                
+
                 client.audio = audio;
                 client.stream = stream;
 
@@ -178,7 +180,7 @@ export class InariService {
                 source.connect(panner);
                 panner.connect(this.audioContext.destination);
 
-                audio.play().catch(() => {}); // For Chrome Bug
+                audio.play().catch(() => { }); // For Chrome Bug
             }
         }
     }

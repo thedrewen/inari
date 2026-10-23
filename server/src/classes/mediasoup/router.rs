@@ -149,8 +149,20 @@ impl InariRouter {
                 let uuid = Uuid::new_v4().to_string();
                 ws_client.send(WsResponses { kind: WsResponsesKind::ConsumersRelatedPosition { consumers: related_positions }, transaction_uuid: uuid });
             }
-            let uuid = Uuid::new_v4().to_string();
-            ws_client.send(WsResponses { kind: WsResponsesKind::ProducerHead { orientation: client.head.clone() }, transaction_uuid: uuid });
+
+            let head_orientatin_has_changed = {
+                let mut head_lock = ws_client.head_orientation().write().await;
+                if *head_lock != client.head {
+                    *head_lock = client.head;
+                    true
+                } else {
+                    false
+                }
+            };
+            if head_orientatin_has_changed {
+                let uuid = Uuid::new_v4().to_string();
+                ws_client.send(WsResponses { kind: WsResponsesKind::ProducerHead { orientation: client.head.clone() }, transaction_uuid: uuid });
+            }
         }
     }
 }

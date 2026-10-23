@@ -1,4 +1,4 @@
-use std::{collections::HashMap, sync::Arc};
+use std::{collections::HashMap, sync::Arc, vec};
 
 use futures_util::{SinkExt, StreamExt};
 use getset::Getters;
@@ -38,7 +38,9 @@ pub struct Client {
     is_auth: bool,
 
     producer: Option<Producer>,
-    consumers: Arc<RwLock<HashMap<ProducerId, LocalConsumer>>>
+    consumers: Arc<RwLock<HashMap<ProducerId, LocalConsumer>>>,
+
+    head_orientation: Arc<RwLock<[f64; 3]>>
 }
 
 impl Client {
@@ -55,7 +57,9 @@ impl Client {
             is_auth: false,
 
             producer: None,
-            consumers: Arc::new(RwLock::new(HashMap::new()))
+            consumers: Arc::new(RwLock::new(HashMap::new())),
+
+            head_orientation: Arc::new(RwLock::new([0.0, 0.0, 0.0]))
         }
     }
 

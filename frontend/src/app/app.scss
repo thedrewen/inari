@@ -10,6 +10,9 @@ header {
     img.logo {
         max-width: 100%;
         width: 150px;
+
+        display: block;
+        transition: transform 100ms linear;
     }
 }
 

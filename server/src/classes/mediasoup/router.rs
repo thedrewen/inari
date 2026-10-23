@@ -135,8 +135,10 @@ impl InariRouter {
             }
             
             // Send related position of client B to client A
-            let uuid = Uuid::new_v4().to_string();
-            ws_client.send(WsResponses { kind: WsResponsesKind::ConsumersRelatedPosition { consumers: related_positions }, transaction_uuid: uuid });
+            if related_positions.len() > 0 {
+                let uuid = Uuid::new_v4().to_string();
+                ws_client.send(WsResponses { kind: WsResponsesKind::ConsumersRelatedPosition { consumers: related_positions }, transaction_uuid: uuid });
+            }
             let uuid = Uuid::new_v4().to_string();
             ws_client.send(WsResponses { kind: WsResponsesKind::ProducerHead { orientation: client.head.clone() }, transaction_uuid: uuid });
         }

@@ -1,10 +1,10 @@
+<header>
+    <img id="logo" class="logo" src="/assets/inari-inverted.svg" alt="inari-logo">
+    <h1>
+        Inari
+    </h1>
+</header>
 @if (is.pageState() == is.PageState.WAIT_FOR_CODE) {
-    <header>
-        <img class="logo" src="/assets/inari-inverted.svg" alt="inari-logo">
-        <h1>
-            Inari
-        </h1>
-    </header>
     <main>
         <h2>
             Welcome on Inari, enter the code and the channel from the game to log in!
@@ -22,24 +22,12 @@
         </div>
     </main>
 } @else if (is.pageState() == is.PageState.LOGGING_IN) {
-    <header>
-        <img class="logo" src="/assets/inari-inverted.svg" alt="inari-logo">
-        <h1>
-            Inari
-        </h1>
-    </header>
     <main>
         <h2>
             Connecting to the server... Please wait...
         </h2>
     </main>
 } @else if (is.pageState() == is.PageState.CONNECTED) {
-    <header>
-        <img class="logo" src="/assets/inari-inverted.svg" alt="inari-logo">
-        <h1>
-            Inari
-        </h1>
-    </header>
     <main>
         <h3>
             #{{channel()}}

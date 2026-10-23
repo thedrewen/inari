@@ -1,6 +1,6 @@
 [
     {
-        "code" : "user1",
+        "code" : "user11",
         "muted": false,
         "position" : [
             0,
@@ -14,7 +14,7 @@
         ]
     },
     {
-        "code" : "user2",
+        "code" : "user22",
         "muted": false,
         "position" : [
             0,

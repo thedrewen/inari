@@ -105,8 +105,10 @@ impl Client {
                             self.is_auth = true;
                             self.is_server_client = is_server;
 
+                            let router = self.bundle.mediasoup_manager.get_router(channel, &self.bundle.config).await;
                             if is_server {
                                 if auth_key != self.bundle.config.api_key().clone() {
+                                    router.remove_client(&self).await;
                                     break;
                                 }
                                 logger::log_info(format!(
@@ -114,6 +116,10 @@ impl Client {
                                     self.id
                                 ));
                             } else {
+                                if router.has_client_with_code(auth_key.clone()).await || auth_key.len() < 6 {
+                                    router.remove_client(&self).await;
+                                    break;
+                                }
                                 logger::log_info(format!(
                                     "Client #{} authenticated as client with code {}!",
                                     self.id, auth_key
@@ -121,13 +127,13 @@ impl Client {
                                 self.code = auth_key;
                             }
 
-                            let router = self.bundle.mediasoup_manager.get_router(channel, &self.bundle.config).await;
-                            router.add_client(&self);
-                            let max_distance = *router.max_distance();
+                            router.add_client(&self).await;
+                            let max_distance = *router.config().max_distance();
+                            let app_version = router.config().app_version().clone();
                             self.channel = Some(router);
 
                             self.send(WsResponses {
-                                kind: WsResponsesKind::Auth { max_distance },
+                                kind: WsResponsesKind::Auth { max_distance, app_version },
                                 transaction_uuid: value.transaction_uuid.clone(),
                             });
                         }

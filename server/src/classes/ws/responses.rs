@@ -10,9 +10,6 @@ pub struct ConsumerPosition {
 #[derive(Serialize, Deserialize, Clone, Debug)]
 #[serde( tag = "kind", content = "data", rename_all = "snake_case" )]
 pub enum WsResponsesKind {
-    Welcome { app_version: String },
-    
-    // Client
     RtpCapabilities { rtp_capabilities: RtpCapabilitiesFinalized },
     CreateTransport { id: TransportId, ice_parameters: IceParameters, ice_candidates: Vec<IceCandidate>, dtls_parameters: DtlsParameters },
     ConnectTransport {},
@@ -22,9 +19,7 @@ pub enum WsResponsesKind {
     Consume { consumer_id: ConsumerId, kind: MediaKind, rtp_parameters: RtpParameters },
     ConsumersRelatedPosition { consumers: Vec<ConsumerPosition> },
     ProducerHead { orientation: [f64; 3] },
-    
-    // Server
-    Auth { max_distance: f64 }
+    Auth { max_distance: f64, app_version: String }
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]

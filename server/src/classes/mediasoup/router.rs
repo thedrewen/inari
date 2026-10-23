@@ -13,9 +13,10 @@ pub struct InariRouter {
     router: Router,
     name: String,
     permanent: bool,
-    max_distance: f64,
+    config: Config,
     client_count: Arc<AtomicUsize>,
-    clients: Arc<RwLock<HashMap<usize, Client>>>
+    clients: Arc<RwLock<HashMap<usize, Client>>>,
+    client_codes: Arc<RwLock<HashMap<String, usize>>>
 }
 
 impl InariRouter {
@@ -42,9 +43,10 @@ impl InariRouter {
             router,
             name,
             permanent,
-            max_distance: *config.max_distance(),
+            config: config.clone(),
             client_count: Arc::new(AtomicUsize::new(0)),
-            clients: Arc::new(RwLock::new(HashMap::new()))
+            clients: Arc::new(RwLock::new(HashMap::new())),
+            client_codes: Arc::new(RwLock::new(HashMap::new()))
         }
     }
 
@@ -52,15 +54,21 @@ impl InariRouter {
         self.router.rtp_capabilities().clone()
     }
 
-    pub fn add_client(&self, client: &Client) {
+    pub async fn add_client(&self, client: &Client) {
         logger::log_info(format!("Client #{} has logged in {}", client.id(), self.name));
         self.client_count.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+        self.client_codes.write().await.insert(client.code().clone(), *client.id());
+    }
+
+    pub async fn  has_client_with_code(&self, code: String) -> bool {
+        self.client_codes.read().await.contains_key(&code)
     }
 
     pub async fn remove_client(&self, client: &Client) {
         logger::log_info(format!("Client #{} has logged out {}", client.id(), self.name));
         self.client_count.fetch_sub(1, std::sync::atomic::Ordering::Relaxed);
         self.clients.write().await.remove(client.id());
+        self.client_codes().write().await.remove(client.code());
 
         if !self.permanent && self.client_count.load(std::sync::atomic::Ordering::Relaxed) == 0 {
             client.bundle().mediasoup_manager.close_router(self.name.clone()).await;
@@ -96,7 +104,9 @@ impl InariRouter {
         for client in self.clients.read().await.values() { // Iterate over each client.
             // If the client code matches a code used by a connector's client 
             // and if client has producer ("Producer" = Audio stream from the microphone. If there is one, lol.).
-            if clients.iter().any(|c| c.code == client.code().clone())
+            if client.code().len() == 0 {
+                continue;
+            } else if clients.iter().any(|c| c.code == client.code().clone())
                 && client.producer().is_some()
             {
                 // Insert map code -> real client (clone why ? Because a lot of elements in client are shared)
@@ -126,7 +136,7 @@ impl InariRouter {
                 let Some(producer) = ws_client_target.producer() else { continue };
 
                 // Get distance between client A and client B or client is force muted by connector
-                if client.distance_to(client_target) > self.max_distance || client_target.muted {
+                if client.distance_to(client_target) > *self.config.max_distance() || client_target.muted {
                     ws_client.mute_consumer(producer.id()).await; // Mute client B for client A
                 } else {
                     ws_client.resume_consumer(producer.id()).await; // UnMute client B for client A

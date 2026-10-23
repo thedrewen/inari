@@ -36,7 +36,7 @@ ws.on('close', () => {
 
 
 {
-    "code" : "user1", // User Unique Code
+    "code" : "user11", // User Unique Code (Min: 6 Caract)
     "muted": false, // Muted for everyone
     "position" : [
         0, // x

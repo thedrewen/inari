@@ -104,13 +104,13 @@ impl InariRouter {
         for client in self.clients.read().await.values() { // Iterate over each client.
             // If the client code matches a code used by a connector's client 
             // and if client has producer ("Producer" = Audio stream from the microphone. If there is one, lol).
-            if client.code().len() == 0 {
-                continue;
-            } else if clients.iter().any(|c| c.code == client.code().clone())
-                && client.producer().is_some()
+            if clients.iter().any(|c| c.code == client.code().clone())
+                && client.producer().is_some() && client.code().len() > 0
             {
                 // Insert map code -> real client (clone why ? Because a lot of elements in client are shared)
                 clients_by_code.insert(client.code().clone(), client.clone());
+            } else {
+                client.mute_consumers().await;
             }
         }
 

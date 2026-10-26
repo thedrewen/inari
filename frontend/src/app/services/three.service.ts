@@ -1,0 +1,99 @@
+import { Service } from '@angular/core';
+import * as THREE from 'three';
+import { STLLoader } from 'three/examples/jsm/Addons.js';
+
+@Service()
+export class ThreeService {
+
+    private scene = new THREE.Scene();
+    private camera : THREE.PerspectiveCamera | null = null; 
+    private renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+    private head : THREE.Mesh | null = null;
+
+    private loader = new STLLoader();
+
+    public isDestroy = true;
+
+    private targetQuat = new THREE.Quaternion();
+    private clock = new THREE.Timer();
+    private readonly SMOOTHING = 12;
+
+    public async show() {
+        this.isDestroy = false;
+        const target = document.getElementById('headcursor') as HTMLDivElement;
+        
+        target.appendChild(this.renderer.domElement);
+        if (!this.camera) {
+            this.camera = new THREE.PerspectiveCamera( 50, target.clientWidth / target.clientHeight, 0.1, 1000 );
+        }
+        this.renderer.setSize( target.clientWidth, target.clientHeight );
+
+        if (!this.head) {
+            const geometry = await this.loader.loadAsync('/assets/head.stl');
+            geometry.rotateY(Math.PI / 2);
+            geometry.center();
+            const material = new THREE.MeshStandardMaterial( {
+                color: 0xffffff,
+                flatShading: true,
+                polygonOffset: true,
+                polygonOffsetFactor: 1,
+                polygonOffsetUnits: 1,
+            } );
+            this.head = new THREE.Mesh( geometry, material );
+
+            const box = new THREE.Box3().setFromObject(this.head);
+            const center = new THREE.Vector3();
+            box.getCenter(center);
+            this.head.geometry.translate(-center.x, -center.y, -center.z);
+            this.head.scale.x = 1.5;
+            this.head.scale.y = 1.5;
+            this.head.scale.z = 1.5;
+
+            const edges = new THREE.LineSegments(
+                new THREE.EdgesGeometry( geometry, 20 ),
+                new THREE.LineBasicMaterial( { color: 0x000000 } )
+            );
+            this.head.add(edges);
+
+            this.scene.add(new THREE.AmbientLight( 0xffffff, 0.6 ));
+            const light = new THREE.DirectionalLight( 0xffffff, 2.5 );
+            light.position.set( 10, 20, 30 );
+            this.scene.add(light);
+
+            this.scene.add(this.head);
+            this.updateRotation(0, 0, 0, true);
+        }
+
+        this.camera.position.z = 50;
+        this.renderer.setClearColor( 0x000000, 0 );
+        this.renderer.setAnimationLoop(() => this.animate());
+    }
+
+    private euler = new THREE.Euler(0, 0, 0, 'YXZ');
+    public updateRotation(dx: number, dy: number, dz: number, snap: boolean = false) {
+        if (!this.head) return;
+
+        const yaw = Math.atan2(dx, dz);
+        const pitch = -Math.asin(THREE.MathUtils.clamp(dy, -1, 1));
+
+        this.euler.set(pitch, yaw, 0, 'YXZ');
+        this.targetQuat.setFromEuler(this.euler);
+        if (snap) this.head.quaternion.copy(this.targetQuat);
+    }
+
+    private async animate() {
+        this.clock.update();
+        const dt = this.clock.getDelta();
+        if (this.head) {
+            const t = 1 - Math.exp(-this.SMOOTHING * dt);
+            this.head.quaternion.slerp(this.targetQuat, t);
+        }
+        if (this.camera) {
+            this.renderer.render(this.scene, this.camera);
+        }
+    }
+
+    public destroy() {
+        this.isDestroy = true;
+    }
+}

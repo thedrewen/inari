@@ -35,6 +35,8 @@
         <h2>
             You are logged in to Inari!<br> Number of users logged in: {{is.clients_count()}}
         </h2>
+        <div id="headcursor">
+        </div>
         <div class="buttons">
             <button (click)="is.mute()">
                 @if (is.isMute()) {

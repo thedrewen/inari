@@ -1,9 +1,10 @@
-import { ElementRef, inject, Service, signal, ViewChild } from '@angular/core';
+import { ElementRef, inject, isDevMode, Service, signal, ViewChild } from '@angular/core';
 import { UrlService } from './url.service';
 import { v4 as uuidv4 } from 'uuid';
 import { Device } from 'mediasoup-client';
 import { Consumer, Producer, RtpCapabilities, Transport } from 'mediasoup-client/types';
 import NoSleep from 'nosleep.js';
+import { ThreeService } from './three.service';
 
 enum PageState {
     WAIT_FOR_CODE = 0,
@@ -19,6 +20,7 @@ export class InariService {
 
     // Injects
     private readonly urlService = inject(UrlService);
+    private readonly threeService = inject(ThreeService);
 
     // Internal
     public pageState = signal<PageState>(PageState.WAIT_FOR_CODE);
@@ -121,16 +123,7 @@ export class InariService {
                     l.forwardY.setTargetAtTime(y, t, 0.1);
                     l.forwardZ.setTargetAtTime(z, t, 0.1);
 
-                    // For later
-                    // const yaw = Math.atan2(-x, z) * 180 / Math.PI;
-                    // const pitch = Math.asin(Math.max(-1, Math.min(1, -y))) * 180 / Math.PI;
-
-                    // const base = (((this.yawTarget + 180) % 360) + 360) % 360 - 180;
-                    // this.yawTarget += ((yaw - base + 540) % 360) - 180;
-                    // if (!this.logo) {
-                    //     this.logo = document.getElementById('logo') as HTMLImageElement;
-                    // }
-                    // this.logo.style.transform = `rotateY(${-this.yawTarget}deg) rotateZ(${-pitch}deg)`;
+                    this.threeService.updateRotation(x, y, z);
                 } else if (data.kind == 'consumers_related_position') {
                     const { consumers } = data.data;
                     
@@ -270,6 +263,7 @@ export class InariService {
         this.producer = await this.producer_transport.produce({ track: this.track });
         this.producer.resume();
         this.noSleep.enable();
+        this.threeService.show();
     }
 
     public async mute() {
@@ -312,6 +306,7 @@ export class InariService {
         this.track?.stop();
         this.producer_transport?.close();
         this.consumers_transport?.close();
+        this.threeService.destroy();
         this.pageState.set(PageState.WAIT_FOR_CODE);
         this.noSleep.disable();
     }

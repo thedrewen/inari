@@ -16,17 +16,18 @@ export class ThreeService {
 
     private targetQuat = new THREE.Quaternion();
     private clock = new THREE.Timer();
-    private readonly SMOOTHING = 12;
+    private readonly SMOOTHING = 10;
+
+    private targetDiv: HTMLDivElement | null = null;
 
     public async show() {
         this.isDestroy = false;
-        const target = document.getElementById('headcursor') as HTMLDivElement;
-        
-        target.appendChild(this.renderer.domElement);
+        this.targetDiv = document.getElementById('headcursor') as HTMLDivElement;
+        this.targetDiv.appendChild(this.renderer.domElement);
         if (!this.camera) {
-            this.camera = new THREE.PerspectiveCamera( 50, target.clientWidth / target.clientHeight, 0.1, 1000 );
+            this.camera = new THREE.PerspectiveCamera( 50, this.targetDiv.clientWidth / this.targetDiv.clientHeight, 0.1, 1000 );
         }
-        this.renderer.setSize( target.clientWidth, target.clientHeight );
+        this.renderer.setSize( this.targetDiv.clientWidth, this.targetDiv.clientHeight );
 
         if (!this.head) {
             const geometry = await this.loader.loadAsync('/assets/head.stl');
@@ -45,9 +46,17 @@ export class ThreeService {
             const center = new THREE.Vector3();
             box.getCenter(center);
             this.head.geometry.translate(-center.x, -center.y, -center.z);
-            this.head.scale.x = 1.5;
-            this.head.scale.y = 1.5;
-            this.head.scale.z = 1.5;
+
+            if (this.targetDiv.clientWidth < 750) {
+                this.head.scale.x = 0.5;
+                this.head.scale.y = 0.5;
+                this.head.scale.z = 0.5; 
+            } else {
+                this.head.scale.x = 0.8;
+                this.head.scale.y = 0.8;
+                this.head.scale.z = 0.8;    
+            }
+            
 
             const edges = new THREE.LineSegments(
                 new THREE.EdgesGeometry( geometry, 20 ),
@@ -61,7 +70,7 @@ export class ThreeService {
             this.scene.add(light);
 
             this.scene.add(this.head);
-            this.updateRotation(0, 0, 0, true);
+            this.updateRotation(-0.75, 0, 0.7853982, true);
         }
 
         this.camera.position.z = 50;
@@ -76,12 +85,32 @@ export class ThreeService {
         const yaw = Math.atan2(dx, dz);
         const pitch = -Math.asin(THREE.MathUtils.clamp(dy, -1, 1));
 
-        this.euler.set(pitch, yaw, 0, 'YXZ');
+        this.euler.set(pitch, yaw, 0.7853982, 'YXZ');
         this.targetQuat.setFromEuler(this.euler);
         if (snap) this.head.quaternion.copy(this.targetQuat);
     }
 
     private async animate() {
+
+        if (this.targetDiv) {
+            this.renderer.setSize( this.targetDiv.clientWidth, this.targetDiv.clientHeight );
+            if (this.camera) {
+                this.camera.aspect = this.targetDiv.clientWidth / this.targetDiv.clientHeight;
+            }
+
+            if (this.head) {
+                if (this.targetDiv.clientWidth < 750) {
+                    this.head.scale.x = 0.5;
+                    this.head.scale.y = 0.5;
+                    this.head.scale.z = 0.5; 
+                } else {
+                    this.head.scale.x = 0.8;
+                    this.head.scale.y = 0.8;
+                    this.head.scale.z = 0.8;    
+                }
+            }
+        }
+
         this.clock.update();
         const dt = this.clock.getDelta();
         if (this.head) {

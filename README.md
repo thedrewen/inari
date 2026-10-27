@@ -62,6 +62,10 @@ By default, the project runs at http://localhost:3030.
 - [Pelican](./resources/egg-inari-pelican.json)
 - [Pterodactyl](./resources/egg-inari-ptero.json)
 
+## Use of AI within Inari.
+
+Generative AI was used only to look up specific elements in documentation, write documentation, and correct spelling and grammar. It was also used to write PoCs and examples to aid development. However, the code in Inari has been completely rewritten, word for word, with a thorough understanding of it.
+
 ## Icons
 
 Icons by Dazzle UI (https://www.svgrepo.com/collection/dazzle-line-icons/)

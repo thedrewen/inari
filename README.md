@@ -12,6 +12,11 @@ Inari is a web application that can be self-hosted by an administrator, a server
 
 > ⚠️ The `main` branch contains the stable/nightly production code. `develop` is the active development branch, potentially unstable.
 
+## Demo
+
+Follow this link to view the demo site : https://inari-demo.foxdroidlabs.com/
+
+
 ## Tech stack
 
 **Frontend** - Angular   

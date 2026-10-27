@@ -11,12 +11,10 @@ use warp::filters::ws::{Message, WebSocket};
 
 use crate::{
     app::Bundle, classes::{
-        mediasoup::router::InariRouter,
-        ws::{
-            requests::{WsRequests, WsRequestsKind},
-            responses::{WsResponses, WsResponsesKind},
+        mediasoup::router::InariRouter, ws::{
+            requests::{WsRequests, WsRequestsKind}, responses::{ErrorType, WsResponses, WsResponsesKind},
         },
-    }, utils::{logger},
+    }, utils::logger,
 };
 
 struct LocalConsumer {
@@ -103,6 +101,7 @@ impl Client {
                         } => {
 
                             if self.is_auth {
+                                self.send(WsResponses { kind: WsResponsesKind::Error { message: ErrorType::AlreadyConnected.to_str(), details: "You are already logged in.".to_string(), code: 409 }, transaction_uuid: value.transaction_uuid.clone() });
                                 break;
                             }
 
@@ -113,6 +112,7 @@ impl Client {
                             if is_server {
                                 if auth_key != self.bundle.config.api_key().clone() {
                                     router.remove_client(&self).await;
+                                    self.send(WsResponses { kind: WsResponsesKind::Error { message: ErrorType::Unauthorized.to_str(), details: "The API key provided is invalid.".to_string(), code: 401 }, transaction_uuid: value.transaction_uuid.clone() });
                                     break;
                                 }
                                 logger::log_info(format!(
@@ -122,6 +122,7 @@ impl Client {
                             } else {
                                 if router.has_client_with_code(auth_key.clone()).await || auth_key.len() < 6 {
                                     router.remove_client(&self).await;
+                                    self.send(WsResponses { kind: WsResponsesKind::Error { message: ErrorType::BadRequest.to_str(), details: "The code provided is invalid.".to_string(), code: 400 }, transaction_uuid: value.transaction_uuid.clone() });
                                     break;
                                 }
                                 logger::log_info(format!(

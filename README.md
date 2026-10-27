@@ -19,16 +19,7 @@ Inari is a web application that can be self-hosted by an administrator, a server
 
 ## Issues
 
-If you have any issues, please contact us via Discord. We've set up a dedicated channel for this!
-
-## Architecture
-
-```
-inari/
-  frontend/   Angular - Web app
-  server/     Rust - WebSocket Server
-  assets/  Static assets (images, SVG...)
-```
+If you have any issues, please contact us via [Discord](https://discord.gg/4vCG6vMNDJ). We've set up a dedicated channel for this!
 
 ## Environment variables
 

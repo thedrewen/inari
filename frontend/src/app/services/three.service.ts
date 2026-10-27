@@ -39,6 +39,10 @@ export class ThreeService {
                 polygonOffset: true,
                 polygonOffsetFactor: 1,
                 polygonOffsetUnits: 1,
+                transparent: true,
+                opacity: 0.9,
+                side: THREE.DoubleSide,
+                depthWrite: false
             } );
             this.head = new THREE.Mesh( geometry, material );
 
@@ -56,16 +60,8 @@ export class ThreeService {
                 this.head.scale.y = 0.8;
                 this.head.scale.z = 0.8;    
             }
-            
 
-            const edges = new THREE.LineSegments(
-                new THREE.EdgesGeometry( geometry, 20 ),
-                new THREE.LineBasicMaterial( { color: 0x000000 } )
-            );
-            this.head.add(edges);
-
-            this.scene.add(new THREE.AmbientLight( 0xffffff, 0.6 ));
-            const light = new THREE.DirectionalLight( 0xffffff, 2.5 );
+            const light = new THREE.DirectionalLight( 0xffffff, 3 );
             light.position.set( 10, 20, 30 );
             this.scene.add(light);
 
@@ -96,6 +92,7 @@ export class ThreeService {
             this.renderer.setSize( this.targetDiv.clientWidth, this.targetDiv.clientHeight );
             if (this.camera) {
                 this.camera.aspect = this.targetDiv.clientWidth / this.targetDiv.clientHeight;
+                this.camera.updateProjectionMatrix();
             }
 
             if (this.head) {

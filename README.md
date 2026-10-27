@@ -23,9 +23,9 @@ If you encounter a problem, please report it via our [public GitHub](https://git
 
 ## Official Repositories Link
 
-- Foxdroidlabs Forgejo : [git.foxdroidlabs.com/Foxdroid-Prod/inari](https://git.foxdroidlabs.com/Foxdroid-Prod/inari)
-- TheDreWen Forgejo : [git.thedrewen.com/InariProject/inari](https://git.thedrewen.com/InariProject/inari)
-- Github : [github.com/thedrewen/inari](https://github.com/thedrewen/inari)
+- Foxdroidlabs Forgejo : [git.foxdroidlabs.com/Foxdroid-Prod/inari](https://git.foxdroidlabs.com/Foxdroid-Prod/inari) (Official Repository)
+- TheDreWen Forgejo : [git.thedrewen.com/InariProject/inari](https://git.thedrewen.com/InariProject/inari) (Mirror Repository)
+- Github : [github.com/thedrewen/inari](https://github.com/thedrewen/inari) (Mirror Repository)
 
 ## Environment variables
 

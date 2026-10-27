@@ -19,7 +19,13 @@ Inari is a web application that can be self-hosted by an administrator, a server
 
 ## Issues
 
-If you have any issues, please contact us via [Discord](https://discord.gg/4vCG6vMNDJ). We've set up a dedicated channel for this!
+If you encounter a problem, please report it via our [public GitHub](https://github.com/thedrewen/inari) repository!
+
+## Official Repositories Link
+
+- Foxdroidlabs Forgejo : [git.foxdroidlabs.com/Foxdroid-Prod/inari](https://git.foxdroidlabs.com/Foxdroid-Prod/inari)
+- TheDreWen Forgejo : [git.thedrewen.com/InariProject/inari](https://git.thedrewen.com/InariProject/inari)
+- Github : [github.com/thedrewen/inari](https://github.com/thedrewen/inari)
 
 ## Environment variables
 

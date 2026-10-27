@@ -1,0 +1,21 @@
+<nav>
+    <div class="left">
+        <img id="logo" class="logo" src="/assets/inari-inverted.svg" alt="inari-logo">
+        <h1 routerLink="/">
+            Inari
+        </h1>
+    </div>
+    <div class="right">
+        @if (clients_count()) {
+        <div class="snap">
+            {{clients_count()}}
+            <div class="pulse"></div>
+        </div>
+        }
+        @if (channel()) {
+        <div class="snap">
+            <p>#{{channel()}}</p>
+        </div>
+        }
+    </div>
+</nav>

@@ -32,7 +32,8 @@ impl App {
     pub async fn run(&self) {
         let port = *self.config.api_port();
         let routes = index(self.config.app_version().clone())
-            .or(ws(self.get_bundle()));
+            .or(ws(self.get_bundle()))
+            .or(warp::fs::file("./static/index.html"));
  
 
         warp::serve(routes)

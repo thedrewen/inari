@@ -1,6 +1,6 @@
 import { Service } from '@angular/core';
 import * as THREE from 'three';
-import { STLLoader } from 'three/examples/jsm/Addons.js';
+import { STLLoader } from 'three/examples/jsm/loaders/STLLoader.js';
 
 @Service()
 export class ThreeService {

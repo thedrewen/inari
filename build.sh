@@ -15,5 +15,6 @@ docker run --rm -v .:/app --user $(id -u):$(id -g) -w /app inari-builder cargo b
 
 cd ..
 mv server/target/release/inari target/
+cp server/.env target
 
 cp server/.env.example target/.env

@@ -19,7 +19,7 @@ ws.on('open', () => {
     interval = setInterval(async () => {
         const data = await readFile('./positions.json', 'utf-8');
         send('clients', { clients: JSON.parse(data) });
-    }, 1000);
+    }, 1000); // Interval always 0.3 second !
 });
 
 ws.on('message', (message) => {
@@ -30,3 +30,24 @@ ws.on('close', () => {
     console.log('Connection closed !');
     clearInterval(interval);
 });
+
+
+/*
+
+
+{
+    "code" : "user11", // User Unique Code (Min: 6 Caract)
+    "muted": false, // Muted for everyone
+    "position" : [
+        0, // x
+        0, // y = Same as minecraft
+        0 // z
+    ],
+    "head" : [
+        0, // x
+        0, // y
+        0, // z 
+    ]
+}
+
+*/

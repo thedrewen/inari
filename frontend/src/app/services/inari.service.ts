@@ -1,9 +1,10 @@
-import { inject, Service, signal } from '@angular/core';
+import { ElementRef, inject, isDevMode, Service, signal, ViewChild } from '@angular/core';
 import { UrlService } from './url.service';
 import { v4 as uuidv4 } from 'uuid';
 import { Device } from 'mediasoup-client';
 import { Consumer, Producer, RtpCapabilities, Transport } from 'mediasoup-client/types';
 import NoSleep from 'nosleep.js';
+import { ThreeService } from './three.service';
 
 enum PageState {
     WAIT_FOR_CODE = 0,
@@ -11,13 +12,15 @@ enum PageState {
     CONNECTED = 2
 }
 
-type Client = { producer_id: string, consumer?: Consumer, stream?: MediaStream, audio?: HTMLAudioElement };
+type Client = { producer_id: string, panner?: PannerNode, consumer?: Consumer, stream?: MediaStream, audio?: HTMLAudioElement };
 
 @Service()
 export class InariService {
+    private logo: null | HTMLImageElement = null;
 
     // Injects
     private readonly urlService = inject(UrlService);
+    private readonly threeService = inject(ThreeService);
 
     // Internal
     public pageState = signal<PageState>(PageState.WAIT_FOR_CODE);
@@ -34,6 +37,8 @@ export class InariService {
     private producer_transport!: Transport;
     private producer!: Producer;
     private consumers_transport!: Transport;
+    private max_distance = 30;
+    private yawTarget = 0;
 
     private pingInterval: any = null;
 
@@ -43,8 +48,26 @@ export class InariService {
     private promises_ws: { uuid: string, res: any }[] = [];
 
     private noSleep: NoSleep = new NoSleep();
+    private audioContext: AudioContext = new AudioContext();
+
+    private setListenerPosition(x: number, y: number, z: number) {
+        const listener = this.audioContext.listener;
+        if (listener.positionX) {
+            const t = this.audioContext.currentTime;
+            listener.positionX.setValueAtTime(x, t);
+            listener.positionY.setValueAtTime(y, t);
+            listener.positionZ.setValueAtTime(z, t);
+        } else {
+            // 
+            (listener as any).setPosition(x, y, z);
+        }
+    }
 
     async init(authCode: string, channel: String) {
+
+        this.setListenerPosition(0, 0, 0);
+        this.audioContext.resume().catch(() => { });
+
         return new Promise((res) => {
             document.body.style.animation = 'backgroundAnimationSpeed 1s linear infinite';
             this.pageState.set(this.PageState.LOGGING_IN);
@@ -53,7 +76,7 @@ export class InariService {
 
             this.ws.onopen = async () => {
                 console.log('Connected to inari ws !');
-                await this.send('auth', { auth_key: authCode, channel, is_server: false });
+                this.max_distance = (await this.send_and_receive('auth', { auth_key: authCode, channel, is_server: false })).max_distance;
                 this.send_and_receive('rtp_capabilities', {}).then((r: any) => this.init_mediasoup(r));
 
                 this.device = new Device();
@@ -86,10 +109,32 @@ export class InariService {
                     if (client) {
                         client.consumer?.close();
                         client.stream?.getTracks().forEach((t) => t.stop());
+                        client.panner?.disconnect();
                         client.audio?.remove();
                     }
                     this.clients = this.clients.filter((c) => c.producer_id !== data.data.id);
                     this.clients_count.update(() => this.clients.length + 1);
+                } else if (data.kind == 'producer_head') {
+                    const [x, y, z] = data.data.orientation;
+                    const l = this.audioContext.listener;
+                    const t = this.audioContext.currentTime;
+
+                    l.forwardX.setTargetAtTime(x, t, 0.1);
+                    l.forwardY.setTargetAtTime(y, t, 0.1);
+                    l.forwardZ.setTargetAtTime(z, t, 0.1);
+
+                    this.threeService.updateRotation(x, y, z);
+                } else if (data.kind == 'consumers_related_position') {
+                    const { consumers } = data.data;
+                    
+                    consumers.forEach((c: { position: number[], producer_id: string }) => {
+                        const client = this.clients.find((c1) => c1.producer_id == c.producer_id);
+                        if (client) {
+                            client.panner?.positionX.setTargetAtTime(c.position[0], this.audioContext.currentTime, 0.1);
+                            client.panner?.positionY.setTargetAtTime(c.position[1], this.audioContext.currentTime, 0.1);
+                            client.panner?.positionZ.setTargetAtTime(c.position[2], this.audioContext.currentTime, 0.1);
+                        }
+                    });
                 }
             }
         });
@@ -127,16 +172,30 @@ export class InariService {
                 stream.addTrack(consumer.track);
 
                 const audio = new Audio();
+                audio.muted = true;
                 audio.srcObject = stream;
-                audio.play();
 
                 client.audio = audio;
                 client.stream = stream;
+
+                const panner = this.audioContext.createPanner();
+                panner.distanceModel = 'linear';
+                panner.maxDistance = this.max_distance;
+                panner.coneInnerAngle = 360;
+                panner.rolloffFactor = 1;
+                panner.refDistance = 1;
+
+                client.panner = panner;
+                let source = this.audioContext.createMediaStreamSource(stream);
+                source.connect(panner);
+                panner.connect(this.audioContext.destination);
+
+                audio.play().catch(() => { }); // For Chrome Bug
             }
         }
     }
 
-    async send_and_receive(kind: string, data: any) {
+    async send_and_receive(kind: string, data: any): Promise<any> {
         let uuid = uuidv4()
         try {
             this.ws.send(JSON.stringify({ kind, data, transaction_uuid: uuid }));
@@ -204,6 +263,7 @@ export class InariService {
         this.producer = await this.producer_transport.produce({ track: this.track });
         this.producer.resume();
         this.noSleep.enable();
+        this.threeService.show();
     }
 
     public async mute() {
@@ -237,13 +297,16 @@ export class InariService {
         this.clients.forEach((c) => {
             c.consumer?.close();
             c.stream?.getTracks().forEach((t) => t.stop());
+            c.panner?.disconnect();
             c.audio?.remove();
         });
+        this.audioContext.close();
         this.clients = [];
         this.producer?.close();
         this.track?.stop();
         this.producer_transport?.close();
         this.consumers_transport?.close();
+        this.threeService.destroy();
         this.pageState.set(PageState.WAIT_FOR_CODE);
         this.noSleep.disable();
     }

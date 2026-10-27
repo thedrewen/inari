@@ -17,7 +17,14 @@ COPY server/ .
 RUN apt-get update && apt-get install -y python3 python3-pip ninja-build && \
   rustup component add rustfmt
 
-RUN cargo build --release
+ENV CARGO_TARGET_DIR=/build/target
+
+RUN --mount=type=cache,target=/build/target \
+    --mount=type=cache,target=/usr/local/cargo/registry \
+    --mount=type=cache,target=/usr/local/cargo/git \
+    set -eux; \
+    cargo build --release; \
+    cp /build/target/release/inari ./inari
 
 # ---
 
@@ -26,6 +33,6 @@ FROM debian:trixie-slim AS runner
 WORKDIR /app
 
 COPY --from=node-builder /app/dist/inari/browser ./static
-COPY --from=rust-builder /app/target/release/inari .
+COPY --from=rust-builder /app/inari .
 
 CMD ["./inari"]

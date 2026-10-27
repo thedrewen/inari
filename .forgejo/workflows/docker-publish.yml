@@ -28,6 +28,8 @@ jobs:
 
       - name: Build and push
         run: |
+          docker pull node:26
+          docker pull rust
           docker buildx build \
             -t thedrewen/inari:${{ steps.meta.outputs.full_tag }} \
             -t thedrewen/inari:${{ steps.meta.outputs.prefix }} \

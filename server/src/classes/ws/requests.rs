@@ -6,6 +6,7 @@ use serde::{Deserialize, Serialize};
 pub struct ClientServerDefinition {
     pub code: String,
     pub position: [f64; 3],
+    pub head: [f64; 3], // Pitch Yaw
     pub muted: bool
 }
 
@@ -15,6 +16,14 @@ impl ClientServerDefinition {
         let dy = self.position[1] - target.position[1];
         let dz = self.position[2] - target.position[2];
         (dx * dx + dy * dy + dz * dz).sqrt()
+    }
+
+    pub fn related_position(&self, target: &ClientServerDefinition) -> [f64; 3] {
+        [
+            target.position[0] - self.position[0], // x
+            target.position[1] - self.position[1], // y
+            target.position[2] - self.position[2] // z
+        ]
     }
 }
 

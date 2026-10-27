@@ -1,4 +1,4 @@
-use std::{collections::HashMap, sync::Arc};
+use std::{collections::HashMap, sync::Arc, vec};
 
 use futures_util::{SinkExt, StreamExt};
 use getset::Getters;
@@ -10,15 +10,13 @@ use uuid::Uuid;
 use warp::filters::ws::{Message, WebSocket};
 
 use crate::{
-    app::Bundle,
-    classes::{
+    app::Bundle, classes::{
         mediasoup::router::InariRouter,
         ws::{
             requests::{WsRequests, WsRequestsKind},
             responses::{WsResponses, WsResponsesKind},
         },
-    },
-    utils::logger,
+    }, utils::{logger},
 };
 
 struct LocalConsumer {
@@ -40,7 +38,9 @@ pub struct Client {
     is_auth: bool,
 
     producer: Option<Producer>,
-    consumers: Arc<RwLock<HashMap<ProducerId, LocalConsumer>>>
+    consumers: Arc<RwLock<HashMap<ProducerId, LocalConsumer>>>,
+
+    head_orientation: Arc<RwLock<[f64; 3]>>
 }
 
 impl Client {
@@ -57,7 +57,9 @@ impl Client {
             is_auth: false,
 
             producer: None,
-            consumers: Arc::new(RwLock::new(HashMap::new()))
+            consumers: Arc::new(RwLock::new(HashMap::new())),
+
+            head_orientation: Arc::new(RwLock::new([0.0, 0.0, 0.0]))
         }
     }
 
@@ -107,8 +109,10 @@ impl Client {
                             self.is_auth = true;
                             self.is_server_client = is_server;
 
+                            let router = self.bundle.mediasoup_manager.get_router(channel, &self.bundle.config).await;
                             if is_server {
                                 if auth_key != self.bundle.config.api_key().clone() {
+                                    router.remove_client(&self).await;
                                     break;
                                 }
                                 logger::log_info(format!(
@@ -116,6 +120,10 @@ impl Client {
                                     self.id
                                 ));
                             } else {
+                                if router.has_client_with_code(auth_key.clone()).await || auth_key.len() < 6 {
+                                    router.remove_client(&self).await;
+                                    break;
+                                }
                                 logger::log_info(format!(
                                     "Client #{} authenticated as client with code {}!",
                                     self.id, auth_key
@@ -123,12 +131,13 @@ impl Client {
                                 self.code = auth_key;
                             }
 
-                            let router = self.bundle.mediasoup_manager.get_router(channel, &self.bundle.config).await;
-                            router.add_client(&self);
+                            router.add_client(&self).await;
+                            let max_distance = *router.config().max_distance();
+                            let app_version = router.config().app_version().clone();
                             self.channel = Some(router);
 
                             self.send(WsResponses {
-                                kind: WsResponsesKind::Auth {},
+                                kind: WsResponsesKind::Auth { max_distance, app_version },
                                 transaction_uuid: value.transaction_uuid.clone(),
                             });
                         }

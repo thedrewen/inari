@@ -7,10 +7,15 @@ Inari
 [![Discord](https://img.shields.io/discord/1532277204585676810?label=Discord)](https://discord.gg/4vCG6vMNDJ)
 [![License: AGPL v3](https://img.shields.io/badge/license-AGPL%20v3-blue)](https://www.gnu.org/licenses/agpl-3.0.html)
 
-A web app that lets you chat with people nearby in games like Minecraft, etc.
+Inari is a web application that can be self-hosted by an administrator, a server creator, or any other user. It allows all users to connect through a proximity-based voice chat system that uses the position and head orientation of their in-game character. To function, it requires a connector that links Inari to the game server.
 </div>
 
 > ⚠️ The `main` branch contains the stable/nightly production code. `develop` is the active development branch, potentially unstable.
+
+## Demo
+
+Follow this link to view the demo site : https://inari-demo.foxdroidlabs.com/
+
 
 ## Tech stack
 
@@ -19,16 +24,13 @@ A web app that lets you chat with people nearby in games like Minecraft, etc.
 
 ## Issues
 
-If you have any issues, please contact us via Discord. We've set up a dedicated channel for this!
+If you encounter a problem, please report it via our [public GitHub](https://github.com/thedrewen/inari) repository!
 
-## Architecture
+## Official Repositories Link
 
-```
-inari/
-  frontend/   Angular - Web app
-  server/     Rust - WebSocket Server
-  assets/  Static assets (images, SVG...)
-```
+- Foxdroidlabs Forgejo : [git.foxdroidlabs.com/Foxdroid-Prod/inari](https://git.foxdroidlabs.com/Foxdroid-Prod/inari) (Official Repository)
+- TheDreWen Forgejo : [git.thedrewen.com/InariProject/inari](https://git.thedrewen.com/InariProject/inari) (Mirror Repository)
+- Github : [github.com/thedrewen/inari](https://github.com/thedrewen/inari) (Mirror Repository)
 
 ## Environment variables
 
@@ -61,6 +63,10 @@ By default, the project runs at http://localhost:3030.
 ## Pelican/Pterodactyl
 - [Pelican](./resources/egg-inari-pelican.json)
 - [Pterodactyl](./resources/egg-inari-ptero.json)
+
+## Use of AI within Inari.
+
+Generative AI was used only to look up specific elements in documentation, write documentation, and correct spelling and grammar. It was also used to write PoCs and examples to aid development. However, the code in Inari has been completely rewritten, word for word, with a thorough understanding of it.
 
 ## Icons
 

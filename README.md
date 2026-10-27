@@ -7,7 +7,7 @@ Inari
 [![Discord](https://img.shields.io/discord/1532277204585676810?label=Discord)](https://discord.gg/4vCG6vMNDJ)
 [![License: AGPL v3](https://img.shields.io/badge/license-AGPL%20v3-blue)](https://www.gnu.org/licenses/agpl-3.0.html)
 
-A web app that lets you chat with people nearby in games like Minecraft, etc.
+Inari is a web application that can be self-hosted by an administrator, a server creator, or any other user. It allows all users to connect through a proximity-based voice chat system that uses the position and head orientation of their in-game character. To function, it requires a connector that links Inari to the game server.
 </div>
 
 > ⚠️ The `main` branch contains the stable/nightly production code. `develop` is the active development branch, potentially unstable.

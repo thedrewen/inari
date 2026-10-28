@@ -1,11 +1,11 @@
-use std::{collections::HashMap, sync::Arc, vec};
+use std::{collections::HashMap, sync::Arc, time::Duration, vec};
 
 use futures_util::{SinkExt, StreamExt};
 use getset::Getters;
 use mediasoup::{
     consumer::{Consumer, ConsumerOptions}, producer::{Producer, ProducerId, ProducerOptions}, transport::Transport, types::rtp_parameters::{MediaKind, RtpCapabilities, RtpParameters}, webrtc_transport::{WebRtcTransport, WebRtcTransportRemoteParameters}
 };
-use tokio::sync::{RwLock, mpsc::UnboundedSender};
+use tokio::{sync::{RwLock, mpsc::UnboundedSender}, time::timeout};
 use uuid::Uuid;
 use warp::filters::ws::{Message, WebSocket};
 
@@ -16,6 +16,8 @@ use crate::{
         },
     }, utils::logger,
 };
+
+const IDLE_TIMEOUT: Duration = Duration::from_secs(30);
 
 struct LocalConsumer {
     consumer: Consumer,
@@ -80,7 +82,7 @@ impl Client {
             }
         });
 
-        while let Some(result) = rx.next().await {
+        while let Ok(Some(result)) = timeout(IDLE_TIMEOUT, rx.next()).await {
             match result {
                 Ok(msg) => {
                     let value = msg.to_str();

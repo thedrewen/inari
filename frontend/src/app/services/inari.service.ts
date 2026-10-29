@@ -65,6 +65,10 @@ export class InariService {
 
     async init(authCode: string, channel: String) {
 
+        if (this.audioContext.state === 'closed') {
+            this.audioContext = new AudioContext();
+        }
+
         this.setListenerPosition(0, 0, 0);
         this.audioContext.resume().catch(() => { });
 

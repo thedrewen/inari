@@ -1,6 +1,6 @@
 {
   "name": "inari",
-  "version": "1.4.0-nightly",
+  "version": "1.4.1-nightly",
   "scripts": {
     "ng": "ng",
     "start": "ng serve",

@@ -7,6 +7,11 @@ pub struct ConsumerPosition {
     pub producer_id: ProducerId
 }
 
+#[derive(Serialize, Debug, Deserialize, Clone)]
+pub struct Connection {
+    pub code: String
+}
+
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub enum ErrorType {
     AlreadyConnected,
@@ -37,7 +42,10 @@ pub enum WsResponsesKind {
     ConsumersRelatedPosition { consumers: Vec<ConsumerPosition> },
     ProducerHead { orientation: [f64; 3] },
     Auth { max_distance: f64, app_version: String },
-    Error { message: String, details: String, code: u32 }
+    Error { message: String, details: String, code: u32 },
+
+    // Server
+    FetchConnections { connections: Vec<Connection> }
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]

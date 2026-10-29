@@ -12,7 +12,7 @@ use warp::filters::ws::{Message, WebSocket};
 use crate::{
     app::Bundle, classes::{
         mediasoup::router::InariRouter, ws::{
-            requests::{WsRequests, WsRequestsKind}, responses::{ErrorType, WsResponses, WsResponsesKind},
+            requests::{WsRequests, WsRequestsKind}, responses::{Connection, ErrorType, WsResponses, WsResponsesKind},
         },
     }, utils::logger,
 };
@@ -144,8 +144,6 @@ impl Client {
                                 transaction_uuid: value.transaction_uuid.clone(),
                             });
                         }
-
-                        // Clients
                         WsRequestsKind::RtpCapabilities {} => {
                             if self.is_connected_as_client()
                                 && let Some(channel) = &self.channel
@@ -273,6 +271,18 @@ impl Client {
                         WsRequestsKind::Clients { clients } => {
                             if self.is_server_client && let Some(channel) = &self.channel {
                                 channel.handle_client_as_server(clients).await;
+                            }
+                        },
+                        WsRequestsKind::FetchConnection {  } => {
+                            if self.is_server_client && let Some(channel) = &self.channel {
+                                let mut connections: Vec<Connection> = vec![];
+                                let clients = channel.clients().read().await.clone();
+                                for client in clients.values() {
+                                    let connection = Connection { code: client.code().clone() };
+                                    connections.push(connection);
+                                }
+                                
+                                self.send(WsResponses { kind: WsResponsesKind::FetchConnections { connections }, transaction_uuid: value.transaction_uuid.clone() });
                             }
                         }
                     }

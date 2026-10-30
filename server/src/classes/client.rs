@@ -40,7 +40,9 @@ pub struct Client {
     producer: Option<Producer>,
     consumers: Arc<RwLock<HashMap<ProducerId, LocalConsumer>>>,
 
-    head_orientation: Arc<RwLock<[f64; 3]>>
+    // Connector Data
+    head_orientation: Arc<RwLock<[f64; 3]>>,
+    force_muted: Arc<RwLock<bool>>
 }
 
 impl Client {
@@ -59,7 +61,8 @@ impl Client {
             producer: None,
             consumers: Arc::new(RwLock::new(HashMap::new())),
 
-            head_orientation: Arc::new(RwLock::new([0.0, 0.0, 0.0]))
+            head_orientation: Arc::new(RwLock::new([0.0, 0.0, 0.0])),
+            force_muted: Arc::new(false)
         }
     }
 
@@ -268,7 +271,7 @@ impl Client {
                         }
 
                         // Servers
-                        WsRequestsKind::SyncState { clients } => {
+                        WsRequestsKind::SyncServerState { clients } => {
                             if self.is_server_client && let Some(channel) = &self.channel {
                                 channel.handle_client_as_server(clients).await;
 
@@ -279,7 +282,7 @@ impl Client {
                                     connections.push(connection);
                                 }
                                 
-                                self.send(WsResponses { kind: WsResponsesKind::SyncState { connections }, transaction_uuid: value.transaction_uuid.clone() });
+                                self.send(WsResponses { kind: WsResponsesKind::SyncServerState { connections }, transaction_uuid: value.transaction_uuid.clone() });
                             }
                         }
                     }

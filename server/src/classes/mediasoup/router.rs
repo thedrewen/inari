@@ -145,11 +145,6 @@ impl InariRouter {
             }
             
             // Send related position of client B to client A
-            if related_positions.len() > 0 {
-                let uuid = Uuid::new_v4().to_string();
-                ws_client.send(WsResponses { kind: WsResponsesKind::ConsumersRelatedPosition { consumers: related_positions }, transaction_uuid: uuid });
-            }
-
             let head_orientatin_has_changed = {
                 let mut head_lock = ws_client.head_orientation().write().await;
                 if *head_lock != client.head {
@@ -159,9 +154,20 @@ impl InariRouter {
                     false
                 }
             };
-            if head_orientatin_has_changed {
+
+            let force_muted_has_changed = {
+                let mut force_muted = ws_client.force_muted().write().await;
+                if *force_muted != client.muted {
+                    *force_muted = client.muted;
+                    true
+                } else {
+                    false
+                }
+            };
+
+            if related_positions.len() > 0 || force_muted_has_changed || head_orientatin_has_changed {
                 let uuid = Uuid::new_v4().to_string();
-                ws_client.send(WsResponses { kind: WsResponsesKind::ProducerHead { orientation: client.head.clone() }, transaction_uuid: uuid });
+                ws_client.send(WsResponses { kind: WsResponsesKind::SyncClientState { force_muted: client.muted, orientation: client.head.clone(), consumers: related_positions }, transaction_uuid: uuid });
             }
         }
     }

@@ -39,13 +39,12 @@ pub enum WsResponsesKind {
     AddClients { ids: Vec<ProducerId> },
     RemoveClient { id: ProducerId },
     Consume { consumer_id: ConsumerId, kind: MediaKind, rtp_parameters: RtpParameters },
-    ConsumersRelatedPosition { consumers: Vec<ConsumerPosition> },
-    ProducerHead { orientation: [f64; 3] },
+    SyncClientState { force_muted: bool, orientation: [f64; 3], consumers: Vec<ConsumerPosition> },
     Auth { max_distance: f64, app_version: String },
     Error { message: String, details: String, code: u32 },
-
+    
     // Server
-    SyncState { connections: Vec<Connection> }
+    SyncServerState { connections: Vec<Connection> }
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]

@@ -30,7 +30,7 @@ impl ClientServerDefinition {
 #[derive(Serialize, Deserialize, Clone, Debug)]
 #[serde( tag = "kind", content = "data", rename_all = "snake_case" )]
 pub enum WsRequestsKind {
-    Auth { is_server: bool, auth_key: String, channel: String },
+    Auth { is_connector: bool, auth_key: String, channel: String },
     
     // Clients
     RtpCapabilities {  },

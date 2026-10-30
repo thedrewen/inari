@@ -28,7 +28,7 @@ struct LocalConsumer {
 #[getset(get = "pub")]
 pub struct Client {
     id: usize,
-    is_server_client: bool,
+    is_connector: bool,
     channel: Option<InariRouter>,
     mpsc_tx: Option<UnboundedSender<Message>>,
     code: String,
@@ -49,7 +49,7 @@ impl Client {
     pub fn new(id: usize, bundle: Bundle) -> Self {
         Self {
             id,
-            is_server_client: false,
+            is_connector: false,
             channel: None,
             mpsc_tx: None,
             code: String::new(),
@@ -62,7 +62,7 @@ impl Client {
             consumers: Arc::new(RwLock::new(HashMap::new())),
 
             head_orientation: Arc::new(RwLock::new([0.0, 0.0, 0.0])),
-            force_muted: Arc::new(RwLock::new(false))
+            force_muted: Arc::new(RwLock::new(true))
         }
     }
 
@@ -100,7 +100,7 @@ impl Client {
                     let value: WsRequests = value.unwrap();
                     match value.kind {
                         WsRequestsKind::Auth {
-                            is_server,
+                            is_connector,
                             auth_key,
                             channel,
                         } => {
@@ -111,10 +111,10 @@ impl Client {
                             }
 
                             self.is_auth = true;
-                            self.is_server_client = is_server;
+                            self.is_connector = is_connector;
 
                             let router = self.bundle.mediasoup_manager.get_router(channel, &self.bundle.config).await;
-                            if is_server {
+                            if is_connector {
                                 if auth_key != self.bundle.config.api_key().clone() {
                                     router.remove_client(&self).await;
                                     self.send(WsResponses { kind: WsResponsesKind::Error { message: ErrorType::Unauthorized.to_str(), details: "The API key provided is invalid.".to_string(), code: 401 }, transaction_uuid: value.transaction_uuid.clone() });
@@ -272,7 +272,7 @@ impl Client {
 
                         // Servers
                         WsRequestsKind::SyncServerState { clients } => {
-                            if self.is_server_client && let Some(channel) = &self.channel {
+                            if self.is_connector && let Some(channel) = &self.channel {
                                 channel.handle_client_as_server(clients).await;
 
                                 let mut connections: Vec<Connection> = vec![];
@@ -299,7 +299,7 @@ impl Client {
     }
 
     pub fn is_connected_as_client(&self) -> bool {
-        !self.is_server_client && self.channel.is_some()
+        !self.is_connector && self.channel.is_some()
     }
 
     pub fn set_transport(&mut self, transport: WebRtcTransport, is_producer: bool) -> bool {

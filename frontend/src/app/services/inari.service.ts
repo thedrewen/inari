@@ -27,8 +27,9 @@ export class InariService {
     public PageState = PageState;
 
     public isMute = signal(false);
+    public isForceMute = signal(true);
     public isDaefen = signal(false);
-
+    
     private ws!: WebSocket;
 
     private device!: Device;
@@ -80,7 +81,7 @@ export class InariService {
 
             this.ws.onopen = async () => {
                 console.log('Connected to inari ws !');
-                this.max_distance = (await this.send_and_receive('auth', { auth_key: authCode, channel, is_server: false })).max_distance;
+                this.max_distance = (await this.send_and_receive('auth', { auth_key: authCode, channel, is_connector: false })).max_distance;
                 this.send_and_receive('rtp_capabilities', {}).then((r: any) => this.init_mediasoup(r));
 
                 this.device = new Device();
@@ -118,8 +119,11 @@ export class InariService {
                     }
                     this.clients = this.clients.filter((c) => c.producer_id !== data.data.id);
                     this.clients_count.update(() => this.clients.length + 1);
-                } else if (data.kind == 'producer_head') {
-                    const [x, y, z] = data.data.orientation;
+                } else if (data.kind == 'sync_client_state') {
+                    const { force_muted, orientation, consumers } = data.data;
+
+                    this.isForceMute.set(force_muted);
+                    const [x, y, z] = orientation;
                     const l = this.audioContext.listener;
                     const t = this.audioContext.currentTime;
 
@@ -128,9 +132,6 @@ export class InariService {
                     l.forwardZ.setTargetAtTime(z, t, 0.1);
 
                     this.threeService.updateRotation(x, y, z);
-                } else if (data.kind == 'consumers_related_position') {
-                    const { consumers } = data.data;
-                    
                     consumers.forEach((c: { position: number[], producer_id: string }) => {
                         const client = this.clients.find((c1) => c1.producer_id == c.producer_id);
                         if (client) {
@@ -271,6 +272,10 @@ export class InariService {
     }
 
     public async mute() {
+
+        if (this.isForceMute()) {
+            return;
+        }
         if (this.isMute()) {
             this.producer.resume();
         } else {

@@ -100,7 +100,7 @@ export class InariService {
                 const data = JSON.parse(message.data);
 
                 if (data.kind == 'error') {
-                    this.errorService.addError(data.data.details);
+                    this.errorService.setError(data.data.details);
                 }
 
                 let promise = this.promises_ws.find((v) => v.uuid == data.transaction_uuid);

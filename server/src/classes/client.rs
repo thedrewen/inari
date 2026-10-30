@@ -62,7 +62,7 @@ impl Client {
             consumers: Arc::new(RwLock::new(HashMap::new())),
 
             head_orientation: Arc::new(RwLock::new([0.0, 0.0, 0.0])),
-            force_muted: Arc::new(false)
+            force_muted: Arc::new(RwLock::new(false))
         }
     }
 

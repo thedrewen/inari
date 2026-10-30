@@ -289,8 +289,9 @@ impl Client {
                                     let connection = Connection { code: client.code().clone(), force_muted: client.force_muted.read().await.clone(), is_connector: *client.is_connector(), is_mute: client.muted.read().await.clone(), is_daefen: client.daefen.read().await.clone() };
                                     connections.push(connection);
                                 }
-                                
-                                self.send(WsResponses { kind: WsResponsesKind::SyncConnectorState { connections }, transaction_uuid: value.transaction_uuid.clone() });
+                                if connections.len() > 0 {
+                                    self.send(WsResponses { kind: WsResponsesKind::SyncConnectorState { connections }, transaction_uuid: value.transaction_uuid.clone() });
+                                }
                             }
                         }
                     }

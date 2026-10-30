@@ -140,8 +140,6 @@ export class InariService {
                             client.panner?.positionZ.setTargetAtTime(c.position[2], this.audioContext.currentTime, 0.1);
                         }
                     });
-                    
-                    this.send('sync_client_state', { is_mute: this.isMute(), is_daefen: this.isDaefen() });
                 }
             }
         });
@@ -278,12 +276,14 @@ export class InariService {
         if (this.isForceMute()) {
             return;
         }
+
         if (this.isMute()) {
             this.producer.resume();
         } else {
             this.producer.pause();
         }
-
+        
+        this.send('sync_client_state', { is_mute: !this.isMute(), is_daefen: this.isDaefen() });
         this.isMute.update((v) => !v);
     }
 
@@ -293,7 +293,7 @@ export class InariService {
         } else {
             this.clients.forEach((v) => v.consumer?.pause());
         }
-
+        this.send('sync_client_state', { is_mute: this.isMute(), is_daefen: !this.isDaefen() });
         this.isDaefen.update((v) => !v);
     }
 

@@ -10,7 +10,8 @@ pub struct ConsumerPosition {
 #[derive(Serialize, Debug, Deserialize, Clone)]
 pub struct Connection {
     pub code: String,
-    pub force_muted: bool
+    pub force_muted: bool,
+    pub is_connector: bool
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -44,8 +45,8 @@ pub enum WsResponsesKind {
     Auth { max_distance: f64, app_version: String },
     Error { message: String, details: String, code: u32 },
     
-    // Server
-    SyncServerState { connections: Vec<Connection> }
+    // Connectors
+    SyncConnectorState { connections: Vec<Connection> }
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]

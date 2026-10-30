@@ -18,8 +18,8 @@ ws.on('open', () => {
 
     interval = setInterval(async () => {
         const data = await readFile('./positions.json', 'utf-8');
-        send('clients', { clients: JSON.parse(data) });
-    }, 1000); // Interval always 0.3 second !
+        send('sync_connector_state', { clients: JSON.parse(data) });
+    }, 300); // Interval always 0.3 second !
 });
 
 ws.on('message', (message) => {

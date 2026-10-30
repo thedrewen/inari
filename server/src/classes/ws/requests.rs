@@ -41,8 +41,7 @@ pub enum WsRequestsKind {
     Consume { producer_id: ProducerId, rtp_capabilities: RtpCapabilities },
 
     // Server
-    Clients { clients: Vec<ClientServerDefinition> },
-    FetchConnection { }
+    SyncState { clients: Vec<ClientServerDefinition> },
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]

@@ -268,13 +268,10 @@ impl Client {
                         }
 
                         // Servers
-                        WsRequestsKind::Clients { clients } => {
+                        WsRequestsKind::SyncState { clients } => {
                             if self.is_server_client && let Some(channel) = &self.channel {
                                 channel.handle_client_as_server(clients).await;
-                            }
-                        },
-                        WsRequestsKind::FetchConnection {  } => {
-                            if self.is_server_client && let Some(channel) = &self.channel {
+
                                 let mut connections: Vec<Connection> = vec![];
                                 let clients = channel.clients().read().await.clone();
                                 for client in clients.values() {
@@ -282,7 +279,7 @@ impl Client {
                                     connections.push(connection);
                                 }
                                 
-                                self.send(WsResponses { kind: WsResponsesKind::FetchConnections { connections }, transaction_uuid: value.transaction_uuid.clone() });
+                                self.send(WsResponses { kind: WsResponsesKind::SyncState { connections }, transaction_uuid: value.transaction_uuid.clone() });
                             }
                         }
                     }

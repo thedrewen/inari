@@ -45,7 +45,7 @@ pub enum WsResponsesKind {
     Error { message: String, details: String, code: u32 },
 
     // Server
-    FetchConnections { connections: Vec<Connection> }
+    SyncState { connections: Vec<Connection> }
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]

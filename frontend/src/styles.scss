@@ -50,6 +50,10 @@ body {
     border-radius: 10px;
     cursor: pointer;
 }
+.button:disabled {
+    cursor: not-allowed;
+}
+
 button:disabled {
     color: #27272b;
 }

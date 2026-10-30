@@ -3,4 +3,9 @@
         <p><strong>Please note:</strong> You are currently using Firefox. Unfortunately, most versions of Firefox do not work well with Inari. We recommend using a different browser, such as Chrome or Brave.</p>
     </div>
 }
+@if (er.currentError()) {
+    <div class="error">
+        <p><strong>Error:</strong> {{er.currentError()}}</p>
+    </div>
+}
 <router-outlet/>

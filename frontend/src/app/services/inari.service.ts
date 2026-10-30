@@ -5,6 +5,7 @@ import { Device } from 'mediasoup-client';
 import { Consumer, Producer, RtpCapabilities, Transport } from 'mediasoup-client/types';
 import NoSleep from 'nosleep.js';
 import { ThreeService } from './three.service';
+import { ErrorService } from './error.service';
 
 enum PageState {
     WAIT_FOR_CODE = 0,
@@ -16,11 +17,10 @@ type Client = { producer_id: string, panner?: PannerNode, consumer?: Consumer, s
 
 @Service()
 export class InariService {
-    private logo: null | HTMLImageElement = null;
-
     // Injects
     private readonly urlService = inject(UrlService);
     private readonly threeService = inject(ThreeService);
+    private readonly errorService = inject(ErrorService);
 
     // Internal
     public pageState = signal<PageState>(PageState.WAIT_FOR_CODE);
@@ -39,7 +39,6 @@ export class InariService {
     private producer!: Producer;
     private consumers_transport!: Transport;
     private max_distance = 30;
-    private yawTarget = 0;
 
     private pingInterval: any = null;
 
@@ -59,7 +58,6 @@ export class InariService {
             listener.positionY.setValueAtTime(y, t);
             listener.positionZ.setValueAtTime(z, t);
         } else {
-            // 
             (listener as any).setPosition(x, y, z);
         }
     }
@@ -81,7 +79,9 @@ export class InariService {
 
             this.ws.onopen = async () => {
                 console.log('Connected to inari ws !');
-                this.max_distance = (await this.send_and_receive('auth', { auth_key: authCode, channel, is_connector: false })).max_distance;
+                const auth = await this.send_and_receive('auth', { auth_key: authCode, channel, is_connector: false });
+                if (!auth.max_distance) return;
+                this.max_distance = auth.max_distance;
                 this.send_and_receive('rtp_capabilities', {}).then((r: any) => this.init_mediasoup(r));
 
                 this.device = new Device();
@@ -98,6 +98,10 @@ export class InariService {
 
             this.ws.onmessage = async (message) => {
                 const data = JSON.parse(message.data);
+
+                if (data.kind == 'error') {
+                    this.errorService.addError(data.data.details);
+                }
 
                 let promise = this.promises_ws.find((v) => v.uuid == data.transaction_uuid);
 
@@ -217,6 +221,8 @@ export class InariService {
     }
 
     async init_mediasoup(r: any) {
+
+        
         this.routerRtpCapabilities = r.rtp_capabilities;
         await this.device.load({ routerRtpCapabilities: this.routerRtpCapabilities });
         const result: any = await this.send_and_receive('create_transport', { is_producer: true });

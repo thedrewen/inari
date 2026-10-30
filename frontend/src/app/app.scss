@@ -18,3 +18,24 @@
         color: black;
     }
 }
+
+.error {
+    position: absolute;
+    top: 80px;
+    left: 50%;
+    transform: translateX(-50%);
+
+    padding: 10px 20px;
+    width: calc(100% - 60px);
+    max-width: calc(500px);
+
+    background-color: rgba(250, 94, 94, 0.99);
+    border-radius: 10px;
+
+    p {
+        strong {
+            color: black;
+        }
+        color: black;
+    }
+}

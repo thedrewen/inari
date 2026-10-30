@@ -6,12 +6,12 @@
         Welcome on Inari, enter the code and the channel from the game to log in!
     </h2>
     <div class="input">
-        <input [value]="authCode()" (change)="updateAuthCode($event.target.value)" placeholder="XXXXXX" type="text">
+        <input [value]="authCode()" (input)="updateAuthCode($event.target.value)" placeholder="XXXXXX" type="text">
     </div>
     <div class="input">
         <input [value]="channel()" (change)="updateChannel($event.target.value)" placeholder="default" type="text">
     </div>
-    <button class="button" [disabled]="onConnection()" (click)="login()">
+    <button class="button" [disabled]="onConnection() || authCode().length < 6" (click)="login()">
         Log in
     </button>
 </main>

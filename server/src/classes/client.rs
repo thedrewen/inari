@@ -131,7 +131,7 @@ impl Client {
                             } else {
                                 if router.has_client_with_code(auth_key.clone()).await || auth_key.len() < 6 {
                                     router.remove_client(&self).await;
-                                    self.send(WsResponses { kind: WsResponsesKind::Error { message: ErrorType::BadRequest.to_str(), details: "The code provided is invalid.".to_string(), code: 400 }, transaction_uuid: value.transaction_uuid.clone() });
+                                    self.send(WsResponses { kind: WsResponsesKind::Error { message: ErrorType::BadRequest.to_str(), details: "The code contains at least 6 characters or is invalid!".to_string(), code: 400 }, transaction_uuid: value.transaction_uuid.clone() });
                                     break;
                                 }
                                 logger::log_info(format!(

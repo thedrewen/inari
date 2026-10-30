@@ -127,9 +127,11 @@ export class InariService {
                     const l = this.audioContext.listener;
                     const t = this.audioContext.currentTime;
 
-                    l.forwardX.setTargetAtTime(x, t, 0.1);
-                    l.forwardY.setTargetAtTime(y, t, 0.1);
-                    l.forwardZ.setTargetAtTime(z, t, 0.1);
+                    if (l) {
+                        l.forwardX.setTargetAtTime(x, t, 0.1);
+                        l.forwardY.setTargetAtTime(y, t, 0.1);
+                        l.forwardZ.setTargetAtTime(z, t, 0.1);
+                    }
 
                     this.threeService.updateRotation(x, y, z);
                     consumers.forEach((c: { position: number[], producer_id: string }) => {

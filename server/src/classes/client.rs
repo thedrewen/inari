@@ -42,7 +42,9 @@ pub struct Client {
 
     // Connector Data
     head_orientation: Arc<RwLock<[f64; 3]>>,
-    force_muted: Arc<RwLock<bool>>
+    force_muted: Arc<RwLock<bool>>,
+    muted: Arc<RwLock<bool>>,
+    daefen: Arc<RwLock<bool>>
 }
 
 impl Client {
@@ -62,7 +64,9 @@ impl Client {
             consumers: Arc::new(RwLock::new(HashMap::new())),
 
             head_orientation: Arc::new(RwLock::new([0.0, 0.0, 0.0])),
-            force_muted: Arc::new(RwLock::new(true))
+            force_muted: Arc::new(RwLock::new(true)),
+            muted: Arc::new(RwLock::new(false)),
+            daefen: Arc::new(RwLock::new(false))
         }
     }
 
@@ -269,6 +273,10 @@ impl Client {
                                 );
                             }
                         }
+                        WsRequestsKind::SyncClientState { is_mute, is_daefen } => {
+                            *self.muted.write().await = is_mute;
+                            *self.daefen.write().await = is_daefen;
+                        }
 
                         // Connectors
                         WsRequestsKind::SyncConnectorState { clients } => {
@@ -278,7 +286,7 @@ impl Client {
                                 let mut connections: Vec<Connection> = vec![];
                                 let clients = channel.clients().read().await.clone();
                                 for client in clients.values() {
-                                    let connection = Connection { code: client.code().clone(), force_muted: client.force_muted.read().await.clone(), is_connector: *client.is_connector() };
+                                    let connection = Connection { code: client.code().clone(), force_muted: client.force_muted.read().await.clone(), is_connector: *client.is_connector(), is_mute: client.muted.read().await.clone(), is_daefen: client.daefen.read().await.clone() };
                                     connections.push(connection);
                                 }
                                 

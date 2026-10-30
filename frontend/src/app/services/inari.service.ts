@@ -140,6 +140,8 @@ export class InariService {
                             client.panner?.positionZ.setTargetAtTime(c.position[2], this.audioContext.currentTime, 0.1);
                         }
                     });
+                    
+                    this.send('sync_client_state', { is_mute: this.isMute(), is_daefen: this.isDaefen() });
                 }
             }
         });

@@ -39,7 +39,8 @@ pub enum WsRequestsKind {
     Produce { kind: MediaKind, rtp_parameters: RtpParameters },
     FetchClients { },
     Consume { producer_id: ProducerId, rtp_capabilities: RtpCapabilities },
-
+    SyncClientState { is_mute: bool, is_daefen: bool },
+    
     // Connectors
     SyncConnectorState { clients: Vec<ClientServerDefinition> },
 }

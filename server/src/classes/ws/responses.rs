@@ -11,7 +11,9 @@ pub struct ConsumerPosition {
 pub struct Connection {
     pub code: String,
     pub force_muted: bool,
-    pub is_connector: bool
+    pub is_connector: bool,
+    pub is_mute: bool,
+    pub is_daefen: bool
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]

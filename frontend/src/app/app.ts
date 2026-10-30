@@ -7,5 +7,11 @@ import { RouterOutlet } from '@angular/router';
     templateUrl: './app.html',
     styleUrl: './app.scss'
 })
-export class App {
+export class App implements OnInit {
+    isFirefox = signal(false);
+    
+    ngOnInit(): void {
+        // @ts-expect-error
+        this.isFirefox.set(typeof InstallTrigger !== 'undefined');
+    }
 }

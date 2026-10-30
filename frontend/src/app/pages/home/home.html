@@ -26,9 +26,9 @@
     <div id="headcursor">
     </div>
     <div class="buttons">
-        <button class="button" (click)="is.mute()">
+        <button class="button" [style]="is.isForceMute() ? 'cursor: not-allowed;' : ''" (click)="is.mute()">
             @if (is.isMute() || is.isForceMute()) {
-            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <svg [class]="is.isForceMute() ? 'force-muted' : ''" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
                 <g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g>
                 <g id="SVGRepo_iconCarrier">

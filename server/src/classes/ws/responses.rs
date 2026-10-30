@@ -9,7 +9,8 @@ pub struct ConsumerPosition {
 
 #[derive(Serialize, Debug, Deserialize, Clone)]
 pub struct Connection {
-    pub code: String
+    pub code: String,
+    pub force_muted: bool
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]

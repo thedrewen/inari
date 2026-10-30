@@ -278,7 +278,7 @@ impl Client {
                                 let mut connections: Vec<Connection> = vec![];
                                 let clients = channel.clients().read().await.clone();
                                 for client in clients.values() {
-                                    let connection = Connection { code: client.code().clone() };
+                                    let connection = Connection { code: client.code().clone(), force_muted: client.force_muted.read().await.clone() };
                                     connections.push(connection);
                                 }
                                 

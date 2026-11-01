@@ -14,16 +14,26 @@ let interval;
 
 ws.on('open', () => {
     console.log('Connected !');
-    send('auth', {channel: 'default', auth_key: '1234', is_server: true});
+    send('auth', {channel: 'default', auth_key: '1234', is_connector: true});
 
     interval = setInterval(async () => {
         const data = await readFile('./positions.json', 'utf-8');
-        send('clients', { clients: JSON.parse(data) });
-    }, 1000); // Interval always 0.3 second !
+        send('sync_connector_state', { clients: JSON.parse(data) });
+    }, 300); // Interval always 0.3 second !
 });
 
 ws.on('message', (message) => {
-    console.log(message.toString());
+    try {
+        const data = JSON.parse(message);
+        console.log('============================')
+        if (data.kind == 'sync_connector_state') {
+            for (let c of data.data.connections) {
+                console.log(`${c.code} > Mute : ${c.is_mute} Daefen : ${c.is_daefen}`);
+            }
+        }
+    } catch (error) {
+        
+    }
 });
 
 ws.on('close', () => {
@@ -38,6 +48,8 @@ ws.on('close', () => {
 {
     "code" : "user11", // User Unique Code (Min: 6 Caract)
     "muted": false, // Muted for everyone
+    "display_name": "User 11",
+    "group": "general", // User Group (eg: Overworld)
     "position" : [
         0, // x
         0, // y = Same as minecraft

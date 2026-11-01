@@ -1,28 +1,32 @@
 [
     {
         "code" : "user11",
-        "muted": false,
+        "muted": true,
+        "display_name": "User 11",
+        "group" : "general",
         "position" : [
             0,
             0,
             0
         ],
         "head" : [
-            0,
             0.9,
+            0,
             0
         ]
     },
     {
         "code" : "user22",
         "muted": false,
+        "display_name": "User 22",
+        "group" : "general",
         "position" : [
             0,
             0,
-            10
+            0
         ],
         "head" : [
-            0,
+            0.9,
             0,
             0
         ]

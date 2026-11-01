@@ -1,11 +1,31 @@
-use std::{collections::HashMap, num::{NonZeroU8, NonZeroU32}, sync::{Arc, atomic::AtomicUsize}};
+use std::{
+    collections::HashMap,
+    num::{NonZeroU8, NonZeroU32},
+    sync::{Arc, atomic::AtomicUsize},
+};
 
 use getset::Getters;
-use mediasoup::{router::{Router, RouterOptions}, types::rtp_parameters::{MimeTypeAudio, RtpCapabilitiesFinalized, RtpCodecCapability, RtpCodecParametersParameters}, webrtc_transport::{WebRtcTransport, WebRtcTransportOptions}, worker::Worker};
+use mediasoup::{
+    router::{Router, RouterOptions},
+    types::rtp_parameters::{
+        MimeTypeAudio, RtpCapabilitiesFinalized, RtpCodecCapability, RtpCodecParametersParameters,
+    },
+    webrtc_transport::{WebRtcTransport, WebRtcTransportOptions},
+    worker::Worker,
+};
 use tokio::sync::RwLock;
 use uuid::Uuid;
 
-use crate::{classes::{client::Client, ws::{requests::ClientServerDefinition, responses::{ConsumerPosition, WsResponses, WsResponsesKind}}}, utils::{config::Config, logger}};
+use crate::{
+    classes::{
+        client::Client,
+        ws::{
+            requests::ClientServerDefinition,
+            responses::{ClientLocalState, WsResponses, WsResponsesKind},
+        },
+    },
+    utils::{config::Config, logger},
+};
 
 #[derive(Clone, Getters)]
 #[getset(get = "pub")]
@@ -16,12 +36,11 @@ pub struct InariRouter {
     config: Config,
     client_count: Arc<AtomicUsize>,
     clients: Arc<RwLock<HashMap<usize, Client>>>,
-    client_codes: Arc<RwLock<HashMap<String, usize>>>
+    client_codes: Arc<RwLock<HashMap<String, usize>>>,
 }
 
 impl InariRouter {
     pub async fn new(worker: &Worker, config: &Config, name: String, permanent: bool) -> Self {
-
         let audio_codec = RtpCodecCapability::Audio {
             mime_type: MimeTypeAudio::Opus,
             preferred_payload_type: None,
@@ -46,7 +65,7 @@ impl InariRouter {
             config: config.clone(),
             client_count: Arc::new(AtomicUsize::new(0)),
             clients: Arc::new(RwLock::new(HashMap::new())),
-            client_codes: Arc::new(RwLock::new(HashMap::new()))
+            client_codes: Arc::new(RwLock::new(HashMap::new())),
         }
     }
 
@@ -55,34 +74,49 @@ impl InariRouter {
     }
 
     pub async fn add_client(&self, client: &Client) {
-        logger::log_info(format!("Client #{} has logged in {}", client.id(), self.name));
-        self.client_count.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-        self.client_codes.write().await.insert(client.code().clone(), *client.id());
+        logger::log_info(format!(
+            "Client #{} has logged in {}",
+            client.id(),
+            self.name
+        ));
+        self.client_count
+            .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+        self.client_codes
+            .write()
+            .await
+            .insert(client.code().clone(), *client.id());
     }
 
-    pub async fn  has_client_with_code(&self, code: String) -> bool {
+    pub async fn has_client_with_code(&self, code: String) -> bool {
         self.client_codes.read().await.contains_key(&code)
     }
 
     pub async fn remove_client(&self, client: &Client) {
-        logger::log_info(format!("Client #{} has logged out {}", client.id(), self.name));
-        self.client_count.fetch_sub(1, std::sync::atomic::Ordering::Relaxed);
+        logger::log_info(format!(
+            "Client #{} has logged out {}",
+            client.id(),
+            self.name
+        ));
+        self.client_count
+            .fetch_sub(1, std::sync::atomic::Ordering::Relaxed);
         self.clients.write().await.remove(client.id());
         self.client_codes().write().await.remove(client.code());
 
         if !self.permanent && self.client_count.load(std::sync::atomic::Ordering::Relaxed) == 0 {
-            client.bundle().mediasoup_manager.close_router(self.name.clone()).await;
+            client
+                .bundle()
+                .mediasoup_manager
+                .close_router(self.name.clone())
+                .await;
         }
 
         if let Some(producer) = client.producer() {
             for client in self.clients.read().await.values() {
                 let uuid = Uuid::new_v4().to_string();
-                client.send(
-                    WsResponses {
-                        kind: WsResponsesKind::RemoveClient { id: producer.id() },
-                        transaction_uuid: uuid
-                    }
-                );
+                client.send(WsResponses {
+                    kind: WsResponsesKind::RemoveClient { id: producer.id() },
+                    transaction_uuid: uuid,
+                });
             }
         }
     }
@@ -92,8 +126,10 @@ impl InariRouter {
     }
 
     pub async fn create_transport(&self, client: &Client) -> WebRtcTransport {
-        let options = WebRtcTransportOptions::new_with_server(client.bundle().mediasoup_manager.webrtc_server().clone());
-        let transport = self.router.create_webrtc_transport(options).await.unwrap(); 
+        let options = WebRtcTransportOptions::new_with_server(
+            client.bundle().mediasoup_manager.webrtc_server().clone(),
+        );
+        let transport = self.router.create_webrtc_transport(options).await.unwrap();
         transport
     }
 
@@ -101,11 +137,13 @@ impl InariRouter {
     pub async fn handle_client_as_server(&self, clients: Vec<ClientServerDefinition>) {
         let mut clients_by_code: HashMap<String, Client> = HashMap::new(); // Mapping Code -> Client
 
-        for client in self.clients.read().await.values() { // Iterate over each client.
-            // If the client code matches a code used by a connector's client 
+        for client in self.clients.read().await.values() {
+            // Iterate over each client.
+            // If the client code matches a code used by a connector's client
             // and if client has producer ("Producer" = Audio stream from the microphone. If there is one, lol).
             if clients.iter().any(|c| c.code == client.code().clone())
-                && client.producer().is_some() && client.code().len() > 0
+                && client.producer().is_some()
+                && client.code().len() > 0
             {
                 // Insert map code -> real client (clone why ? Because a lot of elements in client are shared)
                 clients_by_code.insert(client.code().clone(), client.clone());
@@ -116,39 +154,59 @@ impl InariRouter {
 
         // for connector's client in connector's payload
         for client in &clients {
-            // Get Connected Client from connector's client code. 
+            // Get Connected Client from connector's client code.
             // Continue loop else.
-            let Some(ws_client) = clients_by_code.get(&client.code).cloned() else { continue };
-            
+            let Some(ws_client) = clients_by_code.get(&client.code).cloned() else {
+                continue;
+            };
+
             // Mute all consumers for the client. ("Consumer" = Audio stream from other clients)
             ws_client.mute_consumers().await;
 
-            let mut related_positions: Vec<ConsumerPosition> = vec![];
-            
-            // for connector's client in connector's payload
-            for client_target in &clients {
-                if client.code == client_target.code { continue; } // ignored self
-                
-                // Get client only if in connector's payload
-                // continue loop else.
-                let Some(ws_client_target) = clients_by_code.get(&client_target.code) else { continue };
-                // Get producer if exist, else continue loop. (No producer ? Get lost! )
-                let Some(producer) = ws_client_target.producer() else { continue };
+            let mut related_positions: Vec<ClientLocalState> = vec![];
 
-                // Get distance between client A and client B or client is force muted by connector
-                if client.distance_to(client_target) > *self.config.max_distance() || client_target.muted {
-                    ws_client.mute_consumer(producer.id()).await; // Mute client B for client A
-                } else {
-                    ws_client.resume_consumer(producer.id()).await; // UnMute client B for client A
-                    related_positions.push(ConsumerPosition { position: client.related_position(client_target), producer_id: producer.id().clone() });
+            if !*ws_client.daefen().read().await {
+                // for connector's client in connector's payload
+                for client_target in &clients {
+                    if client.code == client_target.code {
+                        continue;
+                    } // ignored self
+                    
+                    // Get client only if in connector's payload
+                    // continue loop else.
+                    let Some(ws_client_target) = clients_by_code.get(&client_target.code) else {
+                        continue;
+                    };
+                    // Get producer if exist, else continue loop. (No producer ? Get lost! )
+                    let Some(producer) = ws_client_target.producer() else {
+                        continue;
+                    };
+
+                    // Get distance between client A and client B or client is force muted by connector
+                    if client.distance_to(client_target) <= *self.config.max_distance()
+                        && !client_target.muted
+                        && client.group == client_target.group
+                    {
+                        ws_client.resume_consumer(producer.id()).await; // UnMute client B for client A
+                        related_positions.push(ClientLocalState {
+                            position: client.related_position(client_target),
+                            producer_id: producer.id().clone(),
+                            display_name: client_target.display_name.clone()
+                        });
+                    }
                 }
             }
-            
+
             // Send related position of client B to client A
-            if related_positions.len() > 0 {
-                let uuid = Uuid::new_v4().to_string();
-                ws_client.send(WsResponses { kind: WsResponsesKind::ConsumersRelatedPosition { consumers: related_positions }, transaction_uuid: uuid });
-            }
+            let display_name_has_changed = {
+                let mut display_name = ws_client.display_name().write().await;
+                if *display_name != client.display_name {
+                    *display_name = client.display_name.clone();
+                    true
+                } else {
+                    false
+                }
+            };
 
             let head_orientatin_has_changed = {
                 let mut head_lock = ws_client.head_orientation().write().await;
@@ -159,9 +217,32 @@ impl InariRouter {
                     false
                 }
             };
-            if head_orientatin_has_changed {
+
+            let force_muted_has_changed = {
+                let mut force_muted = ws_client.force_muted().write().await;
+                if *force_muted != client.muted {
+                    *force_muted = client.muted;
+                    true
+                } else {
+                    false
+                }
+            };
+
+            if related_positions.len() > 0
+                || force_muted_has_changed
+                || head_orientatin_has_changed
+                || display_name_has_changed
+            {
                 let uuid = Uuid::new_v4().to_string();
-                ws_client.send(WsResponses { kind: WsResponsesKind::ProducerHead { orientation: client.head.clone() }, transaction_uuid: uuid });
+                ws_client.send(WsResponses {
+                    kind: WsResponsesKind::SyncClientState {
+                        display_name: client.display_name.clone(),
+                        force_muted: client.muted,
+                        orientation: client.head.clone(),
+                        local_clients: related_positions,
+                    },
+                    transaction_uuid: uuid,
+                });
             }
         }
     }

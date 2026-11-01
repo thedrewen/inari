@@ -6,6 +6,81 @@ main {
     gap: 5px;
     height: calc(100dvh - 70px);
 
+    .settings {
+
+        max-width: 800px;
+        z-index: 1000;
+        position: absolute;
+        top: 10px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: calc(100% - 20px);
+
+        background-color: #020101ca;
+        border-radius: 15px;
+        height: calc(100dvh - 150px);
+
+        display: flex;
+        flex-direction: column;
+
+        .head {
+            padding: 20px;
+            display: flex;
+            justify-content: end;
+            align-items: center;
+
+            svg {
+                width: 30px;
+                cursor: pointer;
+            }
+        }
+
+        .content {
+            overflow: auto;
+            display: flex;
+            flex-direction: column;
+            width: calc(100% - 40px);
+            padding: 20px;
+            padding-top: 0px;
+
+            gap: 10px;
+            
+            h3 {
+                padding: 0;
+                font-size: 1.1rem;
+                width: auto !important;
+                text-align: left;
+                padding-bottom: 10px;
+            }
+
+            .volume-input {
+                display: flex;
+                gap: 10px;
+            }
+
+            .players {
+                display: flex;
+                flex-direction: column;
+                gap: 10px;
+            }
+        }
+    }
+
+    .displayName {
+        position: absolute;
+        bottom: 80px;
+        left: 50%;
+        transform: translateX(-50%);
+
+        padding: 5px 10px;
+        border-radius: 20px;
+        background-color: rgba(0, 0, 0, 0.191);
+
+        p {
+            text-align: center;
+        }
+    }
+
     h2 {
         width: 400px;
         text-align: center;
@@ -74,5 +149,26 @@ main {
                 height: 20px;
             }
         }
+    }
+
+    .settings-btn {
+        svg {
+            transition: 0.5s;
+            transform-box: fill-box;
+            transform-origin: center;
+            transform: rotate(0deg);
+        }
+    }
+
+    .settings-btn:hover {
+        svg {
+            transform-origin: center;
+            transform-box: fill-box;
+            transform: rotate(180deg);
+        }
+    }
+
+    .force-muted * {
+        stroke: red;
     }
 }

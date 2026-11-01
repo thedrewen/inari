@@ -7,7 +7,9 @@ pub struct ClientServerDefinition {
     pub code: String,
     pub position: [f64; 3],
     pub head: [f64; 3], // Pitch Yaw
-    pub muted: bool
+    pub muted: bool,
+    pub display_name: String,
+    pub group: String
 }
 
 impl ClientServerDefinition {
@@ -30,7 +32,7 @@ impl ClientServerDefinition {
 #[derive(Serialize, Deserialize, Clone, Debug)]
 #[serde( tag = "kind", content = "data", rename_all = "snake_case" )]
 pub enum WsRequestsKind {
-    Auth { is_server: bool, auth_key: String, channel: String },
+    Auth { is_connector: bool, auth_key: String, channel: String },
     
     // Clients
     RtpCapabilities {  },
@@ -39,10 +41,10 @@ pub enum WsRequestsKind {
     Produce { kind: MediaKind, rtp_parameters: RtpParameters },
     FetchClients { },
     Consume { producer_id: ProducerId, rtp_capabilities: RtpCapabilities },
-
-    // Server
-    Clients { clients: Vec<ClientServerDefinition> },
-    FetchConnection { }
+    SyncClientState { is_mute: bool, is_daefen: bool },
+    
+    // Connectors
+    SyncConnectorState { clients: Vec<ClientServerDefinition> },
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]

@@ -5,6 +5,8 @@ import { Device } from 'mediasoup-client';
 import { Consumer, Producer, RtpCapabilities, Transport } from 'mediasoup-client/types';
 import NoSleep from 'nosleep.js';
 import { ThreeService } from './three.service';
+import { ErrorService } from './error.service';
+import { ActivatedRoute } from '@angular/router';
 
 enum PageState {
     WAIT_FOR_CODE = 0,
@@ -12,22 +14,23 @@ enum PageState {
     CONNECTED = 2
 }
 
-type Client = { producer_id: string, panner?: PannerNode, consumer?: Consumer, stream?: MediaStream, audio?: HTMLAudioElement };
+type Client = { display_name: string, volume: number, producer_id: string, panner?: PannerNode, gain?: GainNode, consumer?: Consumer, stream?: MediaStream, audio?: HTMLAudioElement };
 
 @Service()
 export class InariService {
-    private logo: null | HTMLImageElement = null;
-
     // Injects
     private readonly urlService = inject(UrlService);
     private readonly threeService = inject(ThreeService);
+    private readonly errorService = inject(ErrorService);
 
     // Internal
     public pageState = signal<PageState>(PageState.WAIT_FOR_CODE);
     public PageState = PageState;
 
     public isMute = signal(false);
+    public isForceMute = signal(true);
     public isDaefen = signal(false);
+    public displayName = signal("");
 
     private ws!: WebSocket;
 
@@ -38,11 +41,10 @@ export class InariService {
     private producer!: Producer;
     private consumers_transport!: Transport;
     private max_distance = 30;
-    private yawTarget = 0;
 
     private pingInterval: any = null;
 
-    private clients: Client[] = [];
+    public clients = signal<Client[]>([]);
     public clients_count = signal(1);
 
     private promises_ws: { uuid: string, res: any }[] = [];
@@ -58,7 +60,6 @@ export class InariService {
             listener.positionY.setValueAtTime(y, t);
             listener.positionZ.setValueAtTime(z, t);
         } else {
-            // 
             (listener as any).setPosition(x, y, z);
         }
     }
@@ -80,7 +81,9 @@ export class InariService {
 
             this.ws.onopen = async () => {
                 console.log('Connected to inari ws !');
-                this.max_distance = (await this.send_and_receive('auth', { auth_key: authCode, channel, is_server: false })).max_distance;
+                const auth = await this.send_and_receive('auth', { auth_key: authCode, channel, is_connector: false });
+                if (!auth.max_distance) return;
+                this.max_distance = auth.max_distance;
                 this.send_and_receive('rtp_capabilities', {}).then((r: any) => this.init_mediasoup(r));
 
                 this.device = new Device();
@@ -98,6 +101,10 @@ export class InariService {
             this.ws.onmessage = async (message) => {
                 const data = JSON.parse(message.data);
 
+                if (data.kind == 'error') {
+                    this.errorService.setError(data.data.details);
+                }
+
                 let promise = this.promises_ws.find((v) => v.uuid == data.transaction_uuid);
 
                 if (promise) {
@@ -107,37 +114,46 @@ export class InariService {
                 }
 
                 if (data.kind == 'add_clients') {
-                    data.data.ids.forEach((c: string) => this.add_client(c));
+                    data.data.clients.forEach((c: any) => this.add_client(c));
                 } else if (data.kind == 'remove_client') {
-                    const client = this.clients.find((c) => c.producer_id == data.data.id);
+                    const client = this.clients().find((c) => c.producer_id == data.data.id);
                     if (client) {
                         client.consumer?.close();
                         client.stream?.getTracks().forEach((t) => t.stop());
                         client.panner?.disconnect();
                         client.audio?.remove();
                     }
-                    this.clients = this.clients.filter((c) => c.producer_id !== data.data.id);
-                    this.clients_count.update(() => this.clients.length + 1);
-                } else if (data.kind == 'producer_head') {
-                    const [x, y, z] = data.data.orientation;
+                    this.clients.update((v) => v.filter((c) => c.producer_id !== data.data.id));
+                    this.clients_count.update(() => this.clients().length + 1);
+                } else if (data.kind == 'sync_client_state') {
+                    const { force_muted, orientation, local_clients, display_name } = data.data;
+
+                    this.displayName.set(display_name);
+                    this.isForceMute.set(force_muted);
+                    const [x, y, z] = orientation;
                     const l = this.audioContext.listener;
                     const t = this.audioContext.currentTime;
 
-                    l.forwardX.setTargetAtTime(x, t, 0.1);
-                    l.forwardY.setTargetAtTime(y, t, 0.1);
-                    l.forwardZ.setTargetAtTime(z, t, 0.1);
+                    if (l) {
+                        l.forwardX.setTargetAtTime(x, t, 0.1);
+                        l.forwardY.setTargetAtTime(y, t, 0.1);
+                        l.forwardZ.setTargetAtTime(z, t, 0.1);
+                    }
 
                     this.threeService.updateRotation(x, y, z);
-                } else if (data.kind == 'consumers_related_position') {
-                    const { consumers } = data.data;
-                    
-                    consumers.forEach((c: { position: number[], producer_id: string }) => {
-                        const client = this.clients.find((c1) => c1.producer_id == c.producer_id);
+                    local_clients.forEach((c: { display_name: string, position: number[], producer_id: string }) => {
+                        const clients = this.clients();
+                        const client = clients.find((c1) => c1.producer_id == c.producer_id);
+                        const now = this.audioContext.currentTime;
                         if (client) {
-                            client.panner?.positionX.setTargetAtTime(c.position[0], this.audioContext.currentTime, 0.1);
-                            client.panner?.positionY.setTargetAtTime(c.position[1], this.audioContext.currentTime, 0.1);
-                            client.panner?.positionZ.setTargetAtTime(c.position[2], this.audioContext.currentTime, 0.1);
+                            client.display_name = c.display_name;
+                            client.panner?.positionX.setTargetAtTime(c.position[0], now, 0.1);
+                            client.panner?.positionY.setTargetAtTime(c.position[1], now, 0.1);
+                            client.panner?.positionZ.setTargetAtTime(c.position[2], now, 0.1);
+
+                            client.gain?.gain.setTargetAtTime(client.volume / 100, now, 0.1);
                         }
+                        this.clients.set(clients.map((c) => c));
                     });
                 }
             }
@@ -153,18 +169,18 @@ export class InariService {
         }
     }
 
-    async add_client(producer_id: string) {
-        if (!this.clients.some((v) => v.producer_id == producer_id)) {
-            const client: Client = { producer_id };
-            this.clients.push(client);
-            this.clients_count.update(() => this.clients.length + 1);
+    async add_client(clientState: { producer_id: string, display_name: string }) {
+        if (!this.clients().some((v) => v.producer_id == clientState.producer_id)) {
+            const client: Client = { volume: 100, producer_id: clientState.producer_id, display_name: clientState.display_name };
+            this.clients.update((v) => [...v, client]);
+            this.clients_count.update(() => this.clients().length + 1);
 
-            let value: any = await this.send_and_receive('consume', { producer_id: producer_id, rtp_capabilities: this.device.recvRtpCapabilities });
+            let value: any = await this.send_and_receive('consume', { producer_id: clientState.producer_id, rtp_capabilities: this.device.recvRtpCapabilities });
 
             if (value) {
                 let { consumer_id, kind, rtp_parameters } = value;
 
-                const consumer = await this.consumers_transport.consume({ id: consumer_id, producerId: producer_id, kind, rtpParameters: rtp_parameters });
+                const consumer = await this.consumers_transport.consume({ id: consumer_id, producerId: clientState.producer_id, kind, rtpParameters: rtp_parameters });
                 if (this.isDaefen()) {
                     consumer.pause();
                 } else {
@@ -189,9 +205,14 @@ export class InariService {
                 panner.rolloffFactor = 1;
                 panner.refDistance = 1;
 
+                const gain = this.audioContext.createGain();
+                gain.gain.value = 1;
+
                 client.panner = panner;
+                client.gain = gain;
                 let source = this.audioContext.createMediaStreamSource(stream);
-                source.connect(panner);
+                source.connect(gain)
+                gain.connect(panner);
                 panner.connect(this.audioContext.destination);
 
                 audio.play().catch(() => { }); // For Chrome Bug
@@ -214,6 +235,8 @@ export class InariService {
     }
 
     async init_mediasoup(r: any) {
+
+
         this.routerRtpCapabilities = r.rtp_capabilities;
         await this.device.load({ routerRtpCapabilities: this.routerRtpCapabilities });
         const result: any = await this.send_and_receive('create_transport', { is_producer: true });
@@ -232,8 +255,8 @@ export class InariService {
                 }
             });
 
-            const clients: any = await this.send_and_receive('fetch_clients', {});
-            clients.ids.forEach((c: string) => this.add_client(c));
+            const clients_data: any = await this.send_and_receive('fetch_clients', {});
+            clients_data.clients.forEach((c: any) => this.add_client(c));
         });
 
 
@@ -271,23 +294,38 @@ export class InariService {
     }
 
     public async mute() {
+
+        if (this.isForceMute()) {
+            return;
+        }
+
         if (this.isMute()) {
             this.producer.resume();
         } else {
             this.producer.pause();
         }
 
+        this.send('sync_client_state', { is_mute: !this.isMute(), is_daefen: this.isDaefen() });
         this.isMute.update((v) => !v);
     }
 
     public async daefen() {
         if (this.isDaefen()) {
-            this.clients.forEach((v) => v.consumer?.resume());
+            this.clients().forEach((v) => v.consumer?.resume());
         } else {
-            this.clients.forEach((v) => v.consumer?.pause());
+            this.clients().forEach((v) => v.consumer?.pause());
         }
-
+        this.send('sync_client_state', { is_mute: this.isMute(), is_daefen: !this.isDaefen() });
         this.isDaefen.update((v) => !v);
+    }
+
+    public async changeClientVolume(producer_id: string, value: string) {
+        const clients = this.clients();
+        const client = clients.find((c) => c.producer_id == producer_id);
+        if (client) {
+            client.volume = parseInt(value);
+            this.clients.set(clients.map((c) => c));
+        }
     }
 
     public async disconnect() {
@@ -298,14 +336,14 @@ export class InariService {
         }
         this.promises_ws.forEach((v) => v.res(null));
         this.promises_ws = [];
-        this.clients.forEach((c) => {
+        this.clients().forEach((c) => {
             c.consumer?.close();
             c.stream?.getTracks().forEach((t) => t.stop());
             c.panner?.disconnect();
             c.audio?.remove();
         });
         this.audioContext.close();
-        this.clients = [];
+        this.clients.set([]);
         this.producer?.close();
         this.track?.stop();
         this.producer_transport?.close();

@@ -2,6 +2,7 @@ import { Component, OnDestroy, OnInit, signal } from '@angular/core';
 import { InariService } from '../../services/inari.service';
 import { NavBar } from '../../components/nav-bar/nav-bar';
 import { Footer } from '../../components/footer/footer';
+import { ActivatedRoute } from '@angular/router';
 
 
 @Component({
@@ -12,9 +13,19 @@ import { Footer } from '../../components/footer/footer';
 })
 export class Home implements OnInit, OnDestroy {
 
+    public settingsOpen = signal(false);
+
     constructor (
-        public readonly is: InariService
-    ) { }
+        public readonly is: InariService,
+        private readonly activatedRoute: ActivatedRoute
+    ) {
+        const query: any = this.activatedRoute.snapshot.queryParams;
+        if (query.channel && query.code) {
+            this.channel.set(query.channel);
+            this.authCode.set(query.code);
+            this.login();
+        }
+    }
 
     ngOnInit(): void {}
     ngOnDestroy(): void {
@@ -38,5 +49,9 @@ export class Home implements OnInit, OnDestroy {
 
     updateChannel(value: string) {
         this.channel.set(value);
+    }
+
+    toggleSettings() {
+        this.settingsOpen.update((v) => !v);
     }
 }

@@ -2,14 +2,25 @@ use mediasoup::{consumer::ConsumerId, producer::ProducerId, transport::Transport
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Debug, Deserialize, Clone)]
-pub struct ConsumerPosition {
+pub struct ClientLocalState {
     pub position: [f64; 3],
+    pub display_name: String,
+    pub producer_id: ProducerId
+}
+
+#[derive(Serialize, Debug, Deserialize, Clone)]
+pub struct ClientState {
+    pub display_name: String,
     pub producer_id: ProducerId
 }
 
 #[derive(Serialize, Debug, Deserialize, Clone)]
 pub struct Connection {
-    pub code: String
+    pub code: String,
+    pub force_muted: bool,
+    pub is_connector: bool,
+    pub is_mute: bool,
+    pub is_daefen: bool
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -36,16 +47,15 @@ pub enum WsResponsesKind {
     CreateTransport { id: TransportId, ice_parameters: IceParameters, ice_candidates: Vec<IceCandidate>, dtls_parameters: DtlsParameters },
     ConnectTransport {},
     Produce { id: ProducerId, details: String },
-    AddClients { ids: Vec<ProducerId> },
+    AddClients { clients: Vec<ClientState> },
     RemoveClient { id: ProducerId },
     Consume { consumer_id: ConsumerId, kind: MediaKind, rtp_parameters: RtpParameters },
-    ConsumersRelatedPosition { consumers: Vec<ConsumerPosition> },
-    ProducerHead { orientation: [f64; 3] },
+    SyncClientState { force_muted: bool, orientation: [f64; 3], local_clients: Vec<ClientLocalState>, display_name: String },
     Auth { max_distance: f64, app_version: String },
     Error { message: String, details: String, code: u32 },
-
-    // Server
-    FetchConnections { connections: Vec<Connection> }
+    
+    // Connectors
+    SyncConnectorState { connections: Vec<Connection> }
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]

@@ -12,7 +12,7 @@ use warp::filters::ws::{Message, WebSocket};
 use crate::{
     app::Bundle, classes::{
         mediasoup::router::InariRouter, ws::{
-            requests::{WsRequests, WsRequestsKind}, responses::{Connection, ErrorType, WsResponses, WsResponsesKind},
+            requests::{WsRequests, WsRequestsKind}, responses::{ClientState, Connection, ErrorType, WsResponses, WsResponsesKind},
         },
     }, utils::logger,
 };
@@ -28,7 +28,7 @@ struct LocalConsumer {
 #[getset(get = "pub")]
 pub struct Client {
     id: usize,
-    is_server_client: bool,
+    is_connector: bool,
     channel: Option<InariRouter>,
     mpsc_tx: Option<UnboundedSender<Message>>,
     code: String,
@@ -40,14 +40,19 @@ pub struct Client {
     producer: Option<Producer>,
     consumers: Arc<RwLock<HashMap<ProducerId, LocalConsumer>>>,
 
-    head_orientation: Arc<RwLock<[f64; 3]>>
+    // Connector Data
+    head_orientation: Arc<RwLock<[f64; 3]>>,
+    force_muted: Arc<RwLock<bool>>,
+    muted: Arc<RwLock<bool>>,
+    daefen: Arc<RwLock<bool>>,
+    display_name: Arc<RwLock<String>>
 }
 
 impl Client {
     pub fn new(id: usize, bundle: Bundle) -> Self {
         Self {
             id,
-            is_server_client: false,
+            is_connector: false,
             channel: None,
             mpsc_tx: None,
             code: String::new(),
@@ -59,7 +64,11 @@ impl Client {
             producer: None,
             consumers: Arc::new(RwLock::new(HashMap::new())),
 
-            head_orientation: Arc::new(RwLock::new([0.0, 0.0, 0.0]))
+            head_orientation: Arc::new(RwLock::new([0.0, 0.0, 0.0])),
+            force_muted: Arc::new(RwLock::new(true)),
+            muted: Arc::new(RwLock::new(false)),
+            daefen: Arc::new(RwLock::new(false)),
+            display_name: Arc::new(RwLock::new(format!("InariUser #{id}")))
         }
     }
 
@@ -97,7 +106,7 @@ impl Client {
                     let value: WsRequests = value.unwrap();
                     match value.kind {
                         WsRequestsKind::Auth {
-                            is_server,
+                            is_connector,
                             auth_key,
                             channel,
                         } => {
@@ -108,10 +117,10 @@ impl Client {
                             }
 
                             self.is_auth = true;
-                            self.is_server_client = is_server;
+                            self.is_connector = is_connector;
 
                             let router = self.bundle.mediasoup_manager.get_router(channel, &self.bundle.config).await;
-                            if is_server {
+                            if is_connector {
                                 if auth_key != self.bundle.config.api_key().clone() {
                                     router.remove_client(&self).await;
                                     self.send(WsResponses { kind: WsResponsesKind::Error { message: ErrorType::Unauthorized.to_str(), details: "The API key provided is invalid.".to_string(), code: 401 }, transaction_uuid: value.transaction_uuid.clone() });
@@ -124,7 +133,7 @@ impl Client {
                             } else {
                                 if router.has_client_with_code(auth_key.clone()).await || auth_key.len() < 6 {
                                     router.remove_client(&self).await;
-                                    self.send(WsResponses { kind: WsResponsesKind::Error { message: ErrorType::BadRequest.to_str(), details: "The code provided is invalid.".to_string(), code: 400 }, transaction_uuid: value.transaction_uuid.clone() });
+                                    self.send(WsResponses { kind: WsResponsesKind::Error { message: ErrorType::BadRequest.to_str(), details: "The code contains at least 6 characters or is invalid!".to_string(), code: 400 }, transaction_uuid: value.transaction_uuid.clone() });
                                     break;
                                 }
                                 logger::log_info(format!(
@@ -229,7 +238,12 @@ impl Client {
                                             let uuid = Uuid::new_v4().to_string();
                                             client.send(WsResponses {
                                                 kind: WsResponsesKind::AddClients {
-                                                    ids: vec![producer.id()],
+                                                    clients: vec![
+                                                        ClientState {
+                                                            display_name: self.display_name.read().await.clone(),
+                                                            producer_id: producer.id()
+                                                        }
+                                                    ],
                                                 },
                                                 transaction_uuid: uuid,
                                             });
@@ -253,36 +267,45 @@ impl Client {
                         }
                         WsRequestsKind::FetchClients {} => {
                             if self.is_connected_as_client() && let Some(channel) = &self.channel {
-                                let clients = channel.clients().read().await.clone();
-                                let mut ids: Vec<ProducerId> = vec![];
-                                for client in clients.values() {
+                                let router_clients = channel.clients().read().await.clone();
+                                let mut clients: Vec<ClientState> = vec![];
+                                for client in router_clients.values() {
                                     if let Some(producer) = client.producer() {
-                                        ids.push(producer.id());
+                                        clients.push(ClientState { display_name: client.display_name().read().await.clone(), producer_id: producer.id() });
                                     }
                                 }
 
                                 self.send(
-                                    WsResponses { kind: WsResponsesKind::AddClients { ids }, transaction_uuid: value.transaction_uuid.clone() }
+                                    WsResponses { kind: WsResponsesKind::AddClients { clients }, transaction_uuid: value.transaction_uuid.clone() }
                                 );
                             }
                         }
-
-                        // Servers
-                        WsRequestsKind::Clients { clients } => {
-                            if self.is_server_client && let Some(channel) = &self.channel {
-                                channel.handle_client_as_server(clients).await;
+                        WsRequestsKind::SyncClientState { is_mute, is_daefen } => {
+                            *self.muted.write().await = is_mute;
+                            if let Some(producer) = self.producer.clone() {
+                                if is_mute {
+                                    let _ = producer.pause().await;
+                                } else {
+                                    let _ = producer.resume().await;
+                                }
                             }
-                        },
-                        WsRequestsKind::FetchConnection {  } => {
-                            if self.is_server_client && let Some(channel) = &self.channel {
+                            *self.daefen.write().await = is_daefen;
+                        }
+
+                        // Connectors
+                        WsRequestsKind::SyncConnectorState { clients } => {
+                            if self.is_connector && let Some(channel) = &self.channel {
+                                channel.handle_client_as_server(clients).await;
+
                                 let mut connections: Vec<Connection> = vec![];
                                 let clients = channel.clients().read().await.clone();
                                 for client in clients.values() {
-                                    let connection = Connection { code: client.code().clone() };
+                                    let connection = Connection { code: client.code().clone(), force_muted: client.force_muted.read().await.clone(), is_connector: *client.is_connector(), is_mute: client.muted.read().await.clone(), is_daefen: client.daefen.read().await.clone() };
                                     connections.push(connection);
                                 }
-                                
-                                self.send(WsResponses { kind: WsResponsesKind::FetchConnections { connections }, transaction_uuid: value.transaction_uuid.clone() });
+                                if connections.len() > 0 {
+                                    self.send(WsResponses { kind: WsResponsesKind::SyncConnectorState { connections }, transaction_uuid: value.transaction_uuid.clone() });
+                                }
                             }
                         }
                     }
@@ -299,7 +322,7 @@ impl Client {
     }
 
     pub fn is_connected_as_client(&self) -> bool {
-        !self.is_server_client && self.channel.is_some()
+        !self.is_connector && self.channel.is_some()
     }
 
     pub fn set_transport(&mut self, transport: WebRtcTransport, is_producer: bool) -> bool {
@@ -348,7 +371,6 @@ impl Client {
         None
     }
 
-
     pub async fn mute_consumers(&self) {
         for consumer in self.consumers.write().await.values_mut() {
             if !consumer.muted {
@@ -356,15 +378,6 @@ impl Client {
                 consumer.muted = true;
             }
         }
-    }
-
-    pub async fn mute_consumer(&self, producer_id: ProducerId) {
-        if let Some(consumer) = self.consumers.write().await.get_mut(&producer_id) {
-            if !consumer.muted {
-                let _ = consumer.consumer.pause().await;
-                consumer.muted = true;
-            }
-        } 
     }
 
     pub async fn resume_consumer(&self, producer_id: ProducerId) {

@@ -130,10 +130,10 @@ export class InariService {
                     this.displayName.set(display_name);
                     this.isForceMuted.set(is_force_muted);
                     if (this.isDeafened() != is_deafened) {
-                        this.deafen();
+                        this.deafen(is_deafened);
                     }
                     if (this.isMuted() != is_muted) {
-                        this.mute();
+                        this.mute(is_muted);
                     }
                     const [x, y, z] = orientation;
                     const l = this.audioContext.listener;
@@ -308,32 +308,32 @@ export class InariService {
         }
 
         if (value == null) {
-            value = this.isMuted();
+            value = !this.isMuted();
         }
 
         if (value) {
-            this.producer.resume();
-        } else {
             this.producer.pause();
+        } else {
+            this.producer.resume();
         }
 
-        this.send('sync_client_state', { is_muted: !value, is_deafened: this.isDeafened() });
-        this.isMuted.set(!value);
+        this.send('sync_client_state', { is_muted: value, is_deafened: this.isDeafened() });
+        this.isMuted.set(value);
     }
 
     public async deafen(value: boolean|null = null) {
 
         if (value == null) {
-            value = this.isDeafened();
+            value = !this.isDeafened();
         }
 
         if (value) {
-            this.clients().forEach((v) => v.consumer?.resume());
-        } else {
             this.clients().forEach((v) => v.consumer?.pause());
+        } else {
+            this.clients().forEach((v) => v.consumer?.resume());
         }
-        this.send('sync_client_state', { is_muted: this.isMuted(), is_deafened: !value });
-        this.isDeafened.set(!value);
+        this.send('sync_client_state', { is_muted: this.isMuted(), is_deafened: value });
+        this.isDeafened.set(value);
     }
 
     public async changeClientVolume(producer_id: string, value: string) {

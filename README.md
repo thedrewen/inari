@@ -43,19 +43,43 @@ The project requires a `.env` file at the root of each service. Refer to the cor
 | API_KEY | Api key for game plugin/addon/mod | Auto Generated | 
 | WEBRTC_SERVER_PORT | WebRTC server port | 44444 |
 | MAX_DISTANCE | The maximum distance at which users can hear each other. | 20 |
+| DEFAULT_CHANNEL | Default channel for users. | default |
 
 ## Running
 
 Docker Hub : https://hub.docker.com/r/thedrewen/inari
 
-### Release
+### Latest (Stable & Nightly)
+
 ```bash
-docker run --name inari -e API_KEY=<GENERATE API KEY> -e SERVER_PUBLIC_IP=<YOUR PUBLIC IP> -p 3030:3030 -p 44444:44444/udp --restart unless-stopped thedrewen/inari:stable
+docker run --name inari \
+    -e API_KEY=<GENERATE API KEY> \
+    -e SERVER_PUBLIC_IP=<YOUR PUBLIC IP> \
+    -p 3030:3030 -p 44444:44444/udp \
+    --restart unless-stopped \
+    thedrewen/inari:latest
+```
+
+### Stable
+
+```bash
+docker run --name inari \
+    -e API_KEY=<GENERATE API KEY> \
+    -e SERVER_PUBLIC_IP=<YOUR PUBLIC IP> \
+    -p 3030:3030 -p 44444:44444/udp \
+    --restart unless-stopped \
+    thedrewen/inari:stable
 ```
 
 ### Nightly
+
 ```bash
-docker run --name inari -e API_KEY=<GENERATE API KEY> -e SERVER_PUBLIC_IP=<YOUR PUBLIC IP> -p 3030:3030 -p 44444:44444/udp --restart unless-stopped thedrewen/inari:nightly
+docker run --name inari \
+    -e API_KEY=<GENERATE API KEY> \
+    -e SERVER_PUBLIC_IP=<YOUR PUBLIC IP> \
+    -p 3030:3030 -p 44444:44444/udp \
+    --restart unless-stopped \
+    thedrewen/inari:nightly
 ```
 
 By default, the project runs at http://localhost:3030.

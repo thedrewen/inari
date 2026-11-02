@@ -172,13 +172,13 @@ impl InariRouter {
                         *ws_client.is_muted().write().await = !is_muted;
                         
                         if let Some(producer) = ws_client.producer() {
-                            if !is_muted {
-                                let _ = producer.resume();
-                            } else {
+                            if *ws_client.is_muted().read().await {
                                 let _ = producer.pause();
+                            } else {
+                                let _ = producer.resume();
                             }
                         }
-                        
+
                         state_changed = true;
                     }
                 }

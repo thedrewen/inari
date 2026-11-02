@@ -301,30 +301,39 @@ export class InariService {
         this.threeService.show();
     }
 
-    public async mute() {
+    public async mute(value: boolean|null = null) {
 
         if (this.isForceMuted()) {
             return;
         }
 
-        if (this.isMuted()) {
+        if (value == null) {
+            value = this.isMuted();
+        }
+
+        if (value) {
             this.producer.resume();
         } else {
             this.producer.pause();
         }
 
-        this.send('sync_client_state', { is_muted: !this.isMuted(), is_deafened: this.isDeafened() });
-        this.isMuted.update((v) => !v);
+        this.send('sync_client_state', { is_muted: !value, is_deafened: this.isDeafened() });
+        this.isMuted.set(!value);
     }
 
-    public async deafen() {
-        if (this.isDeafened()) {
+    public async deafen(value: boolean|null = null) {
+
+        if (value == null) {
+            value = this.isDeafened();
+        }
+
+        if (value) {
             this.clients().forEach((v) => v.consumer?.resume());
         } else {
             this.clients().forEach((v) => v.consumer?.pause());
         }
-        this.send('sync_client_state', { is_muted: this.isMuted(), is_deafened: !this.isDeafened() });
-        this.isDeafened.update((v) => !v);
+        this.send('sync_client_state', { is_muted: this.isMuted(), is_deafened: !value });
+        this.isDeafened.set(!value);
     }
 
     public async changeClientVolume(producer_id: string, value: string) {

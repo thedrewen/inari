@@ -130,10 +130,10 @@ export class InariService {
                     this.displayName.set(display_name);
                     this.isForceMuted.set(is_force_muted);
                     if (this.isDeafened() != is_deafened) {
-                        this.isDeafened.set(is_deafened);
+                        this.deafen();
                     }
                     if (this.isMuted() != is_muted) {
-                        this.isMuted.set(is_muted);
+                        this.mute();
                     }
                     const [x, y, z] = orientation;
                     const l = this.audioContext.listener;

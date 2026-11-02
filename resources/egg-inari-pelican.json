@@ -73,6 +73,19 @@
             "sort": 5
         },
         {
+            "name": "DEFAULT_CHANNEL",
+            "description": "Default channel for users.",
+            "env_variable": "DEFAULT_CHANNEL",
+            "default_value": "default",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": [
+                "string",
+                "required"
+            ],
+            "sort": 5
+        },
+        {
             "name": "SERVER_PUBLIC_IP",
             "description": "The server\u2019s public IP address.",
             "env_variable": "SERVER_PUBLIC_IP",

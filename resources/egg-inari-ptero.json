@@ -33,8 +33,18 @@
             "description": "",
             "env_variable": "API_KEY",
             "default_value": "",
-            "user_viewable": false,
-            "user_editable": false,
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "required|string|max:100",
+            "field_type": "text"
+        },
+        {
+            "name": "DEFAULT_CHANNEL",
+            "description": "",
+            "env_variable": "DEFAULT_CHANNEL",
+            "default_value": "",
+            "user_viewable": true,
+            "user_editable": true,
             "rules": "required|string|max:100",
             "field_type": "text"
         },
@@ -43,8 +53,8 @@
             "description": "",
             "env_variable": "API_PORT",
             "default_value": "3030",
-            "user_viewable": false,
-            "user_editable": false,
+            "user_viewable": true,
+            "user_editable": true,
             "rules": "required|int",
             "field_type": "text"
         },
@@ -53,8 +63,8 @@
             "description": "",
             "env_variable": "MAX_DISTANCE",
             "default_value": "30",
-            "user_viewable": false,
-            "user_editable": false,
+            "user_viewable": true,
+            "user_editable": true,
             "rules": "required|int",
             "field_type": "text"
         },
@@ -63,8 +73,8 @@
             "description": "",
             "env_variable": "SERVER_PUBLIC_IP",
             "default_value": "",
-            "user_viewable": false,
-            "user_editable": false,
+            "user_viewable": true,
+            "user_editable": true,
             "rules": "required|string",
             "field_type": "text"
         },
@@ -73,8 +83,8 @@
             "description": "",
             "env_variable": "WEBRTC_SERVER_PORT",
             "default_value": "44444",
-            "user_viewable": false,
-            "user_editable": false,
+            "user_viewable": true,
+            "user_editable": true,
             "rules": "required|int",
             "field_type": "text"
         }

@@ -1,26 +1,32 @@
 use mediasoup::{producer::ProducerId, types::{data_structures::DtlsParameters, rtp_parameters::{MediaKind, RtpCapabilities, RtpParameters}}};
 use serde::{Deserialize, Serialize};
 
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct ClientConnectorActions {
+    pub toggle_muted: Option<bool>,
+    pub toggle_deafened: Option<bool>,
+}
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
-pub struct ClientServerDefinition {
+pub struct ClientConnectorDefinition {
     pub code: String,
     pub position: [f64; 3],
     pub head: [f64; 3], // Pitch Yaw
-    pub muted: bool,
-    pub display_name: String,
-    pub group: String
+    pub is_force_muted: bool,
+    pub display_name: Option<String>,
+    pub group: Option<String>,
+    pub actions: Option<ClientConnectorActions>
 }
 
-impl ClientServerDefinition {
-    pub fn distance_to(&self, target: &ClientServerDefinition) -> f64 {
+impl ClientConnectorDefinition {
+    pub fn distance_to(&self, target: &ClientConnectorDefinition) -> f64 {
         let dx = self.position[0] - target.position[0];
         let dy = self.position[1] - target.position[1];
         let dz = self.position[2] - target.position[2];
         (dx * dx + dy * dy + dz * dz).sqrt()
     }
 
-    pub fn related_position(&self, target: &ClientServerDefinition) -> [f64; 3] {
+    pub fn related_position(&self, target: &ClientConnectorDefinition) -> [f64; 3] {
         [
             target.position[0] - self.position[0], // x
             target.position[1] - self.position[1], // y
@@ -32,6 +38,7 @@ impl ClientServerDefinition {
 #[derive(Serialize, Deserialize, Clone, Debug)]
 #[serde( tag = "kind", content = "data", rename_all = "snake_case" )]
 pub enum WsRequestsKind {
+    // All
     Auth { is_connector: bool, auth_key: String, channel: String },
     
     // Clients
@@ -41,10 +48,10 @@ pub enum WsRequestsKind {
     Produce { kind: MediaKind, rtp_parameters: RtpParameters },
     FetchClients { },
     Consume { producer_id: ProducerId, rtp_capabilities: RtpCapabilities },
-    SyncClientState { is_mute: bool, is_daefen: bool },
+    SyncClientState { is_muted: bool, is_deafened: bool },
     
     // Connectors
-    SyncConnectorState { clients: Vec<ClientServerDefinition> },
+    SyncConnectorState { clients: Vec<ClientConnectorDefinition> },
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]

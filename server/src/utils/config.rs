@@ -13,6 +13,7 @@ pub struct Config {
     webrtc_server_port: u16,
     server_public_ip: String,
     api_key: String,
+    default_channel: String,
     is_generated_api_key: bool,
     max_distance: f64,
     app_version: String
@@ -44,6 +45,10 @@ impl Config {
             .ok()
             .unwrap_or(String::from("127.0.0.1"));
 
+        let default_channel = env::var("DEFAULT_CHANNEL")
+            .ok()
+            .unwrap_or(String::from("default"));
+
         let webrtc_server_port: u16 = env::var("WEBRTC_SERVER_PORT")
             .ok()
             .and_then(|v| v.parse().ok())
@@ -59,6 +64,7 @@ impl Config {
         Self {
             api_port,
             api_key,
+            default_channel,
             server_public_ip,
             webrtc_server_port,
             is_generated_api_key,

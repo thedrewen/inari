@@ -50,9 +50,9 @@ impl MediaSoupManager {
             logger::log_error("WebrtcServer Closed !".into());
         });
 
-        let default_router = InariRouter::new(&worker, &config, "default".into(), true).await;
+        let default_router = InariRouter::new(&worker, &config, config.default_channel().clone(), true).await;
         let mut routers = HashMap::new();
-        routers.insert("default".into(), default_router);
+        routers.insert(config.default_channel().clone(), default_router);
 
         logger::log_info(format!("WebRtcServer is running..."));
         Self {

@@ -1,8 +1,9 @@
-import { Component, OnDestroy, OnInit, signal } from '@angular/core';
+import { Component, isDevMode, OnDestroy, OnInit, signal } from '@angular/core';
 import { InariService } from '../../services/inari.service';
 import { NavBar } from '../../components/nav-bar/nav-bar';
 import { Footer } from '../../components/footer/footer';
 import { ActivatedRoute } from '@angular/router';
+import { Meta } from '@angular/platform-browser';
 
 
 @Component({
@@ -17,13 +18,19 @@ export class Home implements OnInit, OnDestroy {
 
     constructor (
         public readonly is: InariService,
-        private readonly activatedRoute: ActivatedRoute
+        private readonly activatedRoute: ActivatedRoute,
+        private readonly meta: Meta
     ) {
         const query: any = this.activatedRoute.snapshot.queryParams;
         if (query.channel && query.code) {
             this.channel.set(query.channel);
             this.authCode.set(query.code);
             this.login();
+        } else {
+            if (!isDevMode()) {
+                const default_channel = meta.getTag('name="default-channel"');
+                this.channel.set(default_channel?.content ?? 'default');
+            }
         }
     }
 

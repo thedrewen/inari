@@ -3,16 +3,19 @@ use std::{collections::HashMap, sync::Arc, time::Duration, vec};
 use futures_util::{SinkExt, StreamExt};
 use getset::Getters;
 use mediasoup::{
-    consumer::{Consumer, ConsumerOptions}, producer::{Producer, ProducerId, ProducerOptions}, transport::Transport, types::rtp_parameters::{MediaKind, RtpCapabilities, RtpParameters}, webrtc_transport::{WebRtcTransport, WebRtcTransportRemoteParameters}
+    consumer::{Consumer, ConsumerOptions}, producer::{Producer, ProducerId, ProducerOptions}, transport::Transport, types::rtp_parameters::{MediaKind, RtpCapabilities, RtpParameters}, webrtc_transport::{WebRtcTransport, WebRtcTransportRemoteParameters},
 };
-use tokio::{sync::{RwLock, mpsc::UnboundedSender}, time::timeout};
+use tokio::{
+    sync::{RwLock, mpsc::UnboundedSender},
+    time::timeout,
+};
 use uuid::Uuid;
 use warp::filters::ws::{Message, WebSocket};
 
 use crate::{
     app::Bundle, classes::{
         mediasoup::router::InariRouter, ws::{
-            requests::{WsRequests, WsRequestsKind}, responses::{ClientState, Connection, ErrorType, WsResponses, WsResponsesKind},
+            requests::{WsRequests, WsRequestsKind}, responses::{ClientState, ConnectionDefinition, ErrorType, WsResponses, WsResponsesKind},
         },
     }, utils::logger,
 };
@@ -21,7 +24,7 @@ const IDLE_TIMEOUT: Duration = Duration::from_secs(30);
 
 struct LocalConsumer {
     consumer: Consumer,
-    muted: bool
+    muted: bool,
 }
 
 #[derive(Getters, Clone)]
@@ -42,10 +45,10 @@ pub struct Client {
 
     // Connector Data
     head_orientation: Arc<RwLock<[f64; 3]>>,
-    force_muted: Arc<RwLock<bool>>,
-    muted: Arc<RwLock<bool>>,
-    daefen: Arc<RwLock<bool>>,
-    display_name: Arc<RwLock<String>>
+    is_force_muted: Arc<RwLock<bool>>,
+    is_muted: Arc<RwLock<bool>>,
+    is_deafened: Arc<RwLock<bool>>,
+    display_name: Arc<RwLock<String>>,
 }
 
 impl Client {
@@ -65,10 +68,10 @@ impl Client {
             consumers: Arc::new(RwLock::new(HashMap::new())),
 
             head_orientation: Arc::new(RwLock::new([0.0, 0.0, 0.0])),
-            force_muted: Arc::new(RwLock::new(true)),
-            muted: Arc::new(RwLock::new(false)),
-            daefen: Arc::new(RwLock::new(false)),
-            display_name: Arc::new(RwLock::new(format!("InariUser #{id}")))
+            is_force_muted: Arc::new(RwLock::new(true)),
+            is_muted: Arc::new(RwLock::new(false)),
+            is_deafened: Arc::new(RwLock::new(false)),
+            display_name: Arc::new(RwLock::new(format!("InariUser #{id}"))),
         }
     }
 
@@ -110,20 +113,37 @@ impl Client {
                             auth_key,
                             channel,
                         } => {
-
                             if self.is_auth {
-                                self.send(WsResponses { kind: WsResponsesKind::Error { message: ErrorType::AlreadyConnected.to_str(), details: "You are already logged in.".to_string(), code: 409 }, transaction_uuid: value.transaction_uuid.clone() });
+                                self.send(WsResponses {
+                                    kind: WsResponsesKind::Error {
+                                        message: ErrorType::AlreadyConnected.to_str(),
+                                        details: "You are already logged in.".to_string(),
+                                        code: 409,
+                                    },
+                                    transaction_uuid: value.transaction_uuid.clone(),
+                                });
                                 break;
                             }
 
                             self.is_auth = true;
                             self.is_connector = is_connector;
 
-                            let router = self.bundle.mediasoup_manager.get_router(channel, &self.bundle.config).await;
+                            let router = self
+                                .bundle
+                                .mediasoup_manager
+                                .get_router(channel, &self.bundle.config)
+                                .await;
                             if is_connector {
                                 if auth_key != self.bundle.config.api_key().clone() {
                                     router.remove_client(&self).await;
-                                    self.send(WsResponses { kind: WsResponsesKind::Error { message: ErrorType::Unauthorized.to_str(), details: "The API key provided is invalid.".to_string(), code: 401 }, transaction_uuid: value.transaction_uuid.clone() });
+                                    self.send(WsResponses {
+                                        kind: WsResponsesKind::Error {
+                                            message: ErrorType::Unauthorized.to_str(),
+                                            details: "The API key provided is invalid.".to_string(),
+                                            code: 401,
+                                        },
+                                        transaction_uuid: value.transaction_uuid.clone(),
+                                    });
                                     break;
                                 }
                                 logger::log_info(format!(
@@ -131,7 +151,9 @@ impl Client {
                                     self.id
                                 ));
                             } else {
-                                if router.has_client_with_code(auth_key.clone()).await || auth_key.len() < 6 {
+                                if router.has_client_with_code(auth_key.clone()).await
+                                    || auth_key.len() < 6
+                                {
                                     router.remove_client(&self).await;
                                     self.send(WsResponses { kind: WsResponsesKind::Error { message: ErrorType::BadRequest.to_str(), details: "The code contains at least 6 characters or is invalid!".to_string(), code: 400 }, transaction_uuid: value.transaction_uuid.clone() });
                                     break;
@@ -149,7 +171,10 @@ impl Client {
                             self.channel = Some(router);
 
                             self.send(WsResponses {
-                                kind: WsResponsesKind::Auth { max_distance, app_version },
+                                kind: WsResponsesKind::Auth {
+                                    max_distance,
+                                    app_version,
+                                },
                                 transaction_uuid: value.transaction_uuid.clone(),
                             });
                         }
@@ -238,12 +263,14 @@ impl Client {
                                             let uuid = Uuid::new_v4().to_string();
                                             client.send(WsResponses {
                                                 kind: WsResponsesKind::AddClients {
-                                                    clients: vec![
-                                                        ClientState {
-                                                            display_name: self.display_name.read().await.clone(),
-                                                            producer_id: producer.id()
-                                                        }
-                                                    ],
+                                                    clients: vec![ClientState {
+                                                        display_name: self
+                                                            .display_name
+                                                            .read()
+                                                            .await
+                                                            .clone(),
+                                                        producer_id: producer.id(),
+                                                    }],
                                                 },
                                                 transaction_uuid: uuid,
                                             });
@@ -261,51 +288,84 @@ impl Client {
                             if self.is_connected_as_client() {
                                 let consumer = self.consume(producer_id, rtp_capabilities).await;
                                 if let Some(consumer) = consumer {
-                                    self.send(WsResponses { kind: WsResponsesKind::Consume { consumer_id: consumer.id(), kind: consumer.kind(), rtp_parameters: consumer.rtp_parameters().clone() }, transaction_uuid: value.transaction_uuid.clone() });
+                                    self.send(WsResponses {
+                                        kind: WsResponsesKind::Consume {
+                                            consumer_id: consumer.id(),
+                                            kind: consumer.kind(),
+                                            rtp_parameters: consumer.rtp_parameters().clone(),
+                                        },
+                                        transaction_uuid: value.transaction_uuid.clone(),
+                                    });
                                 }
                             }
                         }
                         WsRequestsKind::FetchClients {} => {
-                            if self.is_connected_as_client() && let Some(channel) = &self.channel {
+                            if self.is_connected_as_client()
+                                && let Some(channel) = &self.channel
+                            {
                                 let router_clients = channel.clients().read().await.clone();
                                 let mut clients: Vec<ClientState> = vec![];
                                 for client in router_clients.values() {
                                     if let Some(producer) = client.producer() {
-                                        clients.push(ClientState { display_name: client.display_name().read().await.clone(), producer_id: producer.id() });
+                                        clients.push(ClientState {
+                                            display_name: client
+                                                .display_name()
+                                                .read()
+                                                .await
+                                                .clone(),
+                                            producer_id: producer.id(),
+                                        });
                                     }
                                 }
 
-                                self.send(
-                                    WsResponses { kind: WsResponsesKind::AddClients { clients }, transaction_uuid: value.transaction_uuid.clone() }
-                                );
+                                self.send(WsResponses {
+                                    kind: WsResponsesKind::AddClients { clients },
+                                    transaction_uuid: value.transaction_uuid.clone(),
+                                });
                             }
                         }
-                        WsRequestsKind::SyncClientState { is_mute, is_daefen } => {
-                            *self.muted.write().await = is_mute;
+                        WsRequestsKind::SyncClientState {
+                            is_muted,
+                            is_deafened,
+                        } => {
+                            *self.is_muted.write().await = is_muted;
                             if let Some(producer) = self.producer.clone() {
-                                if is_mute {
+                                if is_muted {
                                     let _ = producer.pause().await;
                                 } else {
                                     let _ = producer.resume().await;
                                 }
                             }
-                            *self.daefen.write().await = is_daefen;
+                            *self.is_deafened.write().await = is_deafened;
                         }
 
                         // Connectors
                         WsRequestsKind::SyncConnectorState { clients } => {
-                            if self.is_connector && let Some(channel) = &self.channel {
+                            if self.is_connector
+                                && let Some(channel) = &self.channel
+                            {
                                 channel.handle_client_as_server(clients).await;
 
-                                let mut connections: Vec<Connection> = vec![];
+                                let mut connections: Vec<ConnectionDefinition> = vec![];
                                 let clients = channel.clients().read().await.clone();
                                 for client in clients.values() {
-                                    let connection = Connection { code: client.code().clone(), force_muted: client.force_muted.read().await.clone(), is_connector: *client.is_connector(), is_mute: client.muted.read().await.clone(), is_daefen: client.daefen.read().await.clone() };
+                                    let connection = ConnectionDefinition {
+                                        code: client.code().clone(),
+                                        display_name: client.display_name.read().await.clone(),
+                                        is_connector: *client.is_connector(),
+                                        is_force_muted: client.is_force_muted.read().await.clone(),
+                                        is_muted: client.is_muted.read().await.clone(),
+                                        is_deafened: client.is_deafened.read().await.clone(),
+                                    };
                                     connections.push(connection);
                                 }
-                                if connections.len() > 0 {
-                                    self.send(WsResponses { kind: WsResponsesKind::SyncConnectorState { connections }, transaction_uuid: value.transaction_uuid.clone() });
-                                }
+
+                                self.send(WsResponses {
+                                    kind: WsResponsesKind::SyncConnectorState { connections },
+                                    transaction_uuid: value.transaction_uuid.clone(),
+                                });
+                            } else {
+                                self.send(WsResponses { kind: WsResponsesKind::Error { message: ErrorType::Unauthorized.to_str(), details: "You're not a connector.".to_string(), code: 401 }, transaction_uuid: value.transaction_uuid.clone() });
                             }
                         }
                     }
@@ -338,7 +398,9 @@ impl Client {
     }
 
     pub async fn produce(&mut self, kind: MediaKind, rtp_parameters: RtpParameters) -> bool {
-        if let Some(transport) = self.producer_transport.clone() && self.producer.is_none() {
+        if let Some(transport) = self.producer_transport.clone()
+            && self.producer.is_none()
+        {
             let result = transport
                 .produce(ProducerOptions::new(kind, rtp_parameters))
                 .await;
@@ -357,15 +419,27 @@ impl Client {
         false
     }
 
-    pub async fn consume(&mut self, producer_id: ProducerId, rtp_capabilities: RtpCapabilities) -> Option<Consumer> {
+    pub async fn consume(
+        &mut self,
+        producer_id: ProducerId,
+        rtp_capabilities: RtpCapabilities,
+    ) -> Option<Consumer> {
         if let Some(transport) = &self.consumers_transport {
-            let consumer = transport.consume(ConsumerOptions::new(producer_id, rtp_capabilities)).await;
+            let consumer = transport
+                .consume(ConsumerOptions::new(producer_id, rtp_capabilities))
+                .await;
 
             if let Some(consumer) = consumer.ok() {
-                self.consumers.write().await.insert(producer_id, LocalConsumer { consumer: consumer.clone(), muted: true });
+                self.consumers.write().await.insert(
+                    producer_id,
+                    LocalConsumer {
+                        consumer: consumer.clone(),
+                        muted: true,
+                    },
+                );
                 let _ = consumer.pause().await;
                 return Some(consumer);
-            }   
+            }
         }
 
         None
@@ -386,6 +460,6 @@ impl Client {
                 let _ = consumer.consumer.resume().await;
                 consumer.muted = false;
             }
-        } 
+        }
     }
 }

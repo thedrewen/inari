@@ -3,7 +3,8 @@ name: Docker Publish
 on:
   push:
     tags:
-      - "*"
+      - "nightly-*.*.*"
+      - "stable-*.*.*"
 
 jobs:
   build-and-push:
@@ -33,6 +34,8 @@ jobs:
           docker buildx build \
             -t thedrewen/inari:${{ steps.meta.outputs.full_tag }} \
             -t thedrewen/inari:${{ steps.meta.outputs.prefix }} \
+            -t thedrewen/inari:latest \
             .
           docker push thedrewen/inari:${{ steps.meta.outputs.full_tag }}
           docker push thedrewen/inari:${{ steps.meta.outputs.prefix }}
+          docker push thedrewen/inari:latest

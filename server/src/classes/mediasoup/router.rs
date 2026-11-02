@@ -20,7 +20,7 @@ use crate::{
     classes::{
         client::Client,
         ws::{
-            requests::ClientServerDefinition,
+            requests::ClientConnectorDefinition,
             responses::{ClientLocalState, WsResponses, WsResponsesKind},
         },
     },
@@ -134,7 +134,7 @@ impl InariRouter {
     }
 
     // Sorry for my english, i'm belgian :)
-    pub async fn handle_client_as_server(&self, clients: Vec<ClientServerDefinition>) {
+    pub async fn handle_client_as_server(&self, clients: Vec<ClientConnectorDefinition>) {
         let mut clients_by_code: HashMap<String, Client> = HashMap::new(); // Mapping Code -> Client
 
         for client in self.clients.read().await.values() {
@@ -163,15 +163,33 @@ impl InariRouter {
             // Mute all consumers for the client. ("Consumer" = Audio stream from other clients)
             ws_client.mute_consumers().await;
 
-            let mut related_positions: Vec<ClientLocalState> = vec![];
+            let mut state_changed = false;
 
-            if !*ws_client.daefen().read().await {
+            if let Some(actions) = &client.actions {
+                if let Some(toggle_muted) = actions.toggle_muted {
+                    if toggle_muted {
+                        let is_muted = *ws_client.is_muted().read().await;
+                        *ws_client.is_muted().write().await = !is_muted;
+                        state_changed = true;
+                    }
+                }
+                if let Some(toggle_deafened) = actions.toggle_deafened {
+                    if toggle_deafened {
+                        let is_deafened = *ws_client.is_deafened().read().await;
+                        *ws_client.is_deafened().write().await = !is_deafened;
+                        state_changed = true;
+                    }
+                }
+            }
+
+            let mut related_positions: Vec<ClientLocalState> = vec![];
+            if !*ws_client.is_deafened().read().await {
                 // for connector's client in connector's payload
                 for client_target in &clients {
                     if client.code == client_target.code {
                         continue;
                     } // ignored self
-                    
+
                     // Get client only if in connector's payload
                     // continue loop else.
                     let Some(ws_client_target) = clients_by_code.get(&client_target.code) else {
@@ -184,62 +202,54 @@ impl InariRouter {
 
                     // Get distance between client A and client B or client is force muted by connector
                     if client.distance_to(client_target) <= *self.config.max_distance()
-                        && !client_target.muted
-                        && client.group == client_target.group
+                        && !client_target.is_force_muted
+                        && client.group.clone().unwrap_or(String::from("default")) == client_target.group.clone().unwrap_or(String::from("default"))
                     {
                         ws_client.resume_consumer(producer.id()).await; // UnMute client B for client A
                         related_positions.push(ClientLocalState {
                             position: client.related_position(client_target),
                             producer_id: producer.id().clone(),
-                            display_name: client_target.display_name.clone()
+                            display_name: client_target
+                                .display_name
+                                .clone()
+                                .unwrap_or(ws_client_target.display_name().read().await.clone()),
                         });
                     }
                 }
             }
 
             // Send related position of client B to client A
-            let display_name_has_changed = {
-                let mut display_name = ws_client.display_name().write().await;
-                if *display_name != client.display_name {
-                    *display_name = client.display_name.clone();
-                    true
-                } else {
-                    false
+            if let Some(name) = &client.display_name {
+                let mut current = ws_client.display_name().write().await;
+                if *current != *name {
+                    *current = name.clone();
+                    state_changed = true;
                 }
-            };
+            }
 
-            let head_orientatin_has_changed = {
-                let mut head_lock = ws_client.head_orientation().write().await;
-                if *head_lock != client.head {
-                    *head_lock = client.head;
-                    true
-                } else {
-                    false
-                }
-            };
+            let mut head_lock = ws_client.head_orientation().write().await;
+            if *head_lock != client.head {
+                *head_lock = client.head;
+                state_changed = true;
+            }
 
-            let force_muted_has_changed = {
-                let mut force_muted = ws_client.force_muted().write().await;
-                if *force_muted != client.muted {
-                    *force_muted = client.muted;
-                    true
-                } else {
-                    false
-                }
-            };
+            let mut is_force_muted = ws_client.is_force_muted().write().await;
+            if *is_force_muted != client.is_force_muted {
+                *is_force_muted = client.is_force_muted;
+                state_changed = true;
+            }
 
-            if related_positions.len() > 0
-                || force_muted_has_changed
-                || head_orientatin_has_changed
-                || display_name_has_changed
+            if related_positions.len() > 0 || state_changed
             {
                 let uuid = Uuid::new_v4().to_string();
                 ws_client.send(WsResponses {
                     kind: WsResponsesKind::SyncClientState {
-                        display_name: client.display_name.clone(),
-                        force_muted: client.muted,
+                        display_name: ws_client.display_name().read().await.clone(),
+                        is_force_muted: client.is_force_muted,
                         orientation: client.head.clone(),
                         local_clients: related_positions,
+                        is_deafened: *ws_client.is_deafened().read().await,
+                        is_muted: *ws_client.is_muted().read().await
                     },
                     transaction_uuid: uuid,
                 });

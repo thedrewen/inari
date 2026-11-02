@@ -6,7 +6,6 @@ import { Consumer, Producer, RtpCapabilities, Transport } from 'mediasoup-client
 import NoSleep from 'nosleep.js';
 import { ThreeService } from './three.service';
 import { ErrorService } from './error.service';
-import { ActivatedRoute } from '@angular/router';
 
 enum PageState {
     WAIT_FOR_CODE = 0,
@@ -27,9 +26,9 @@ export class InariService {
     public pageState = signal<PageState>(PageState.WAIT_FOR_CODE);
     public PageState = PageState;
 
-    public isMute = signal(false);
-    public isForceMute = signal(true);
-    public isDaefen = signal(false);
+    public isMuted = signal(false);
+    public isForceMuted = signal(true);
+    public isDeafened = signal(false);
     public displayName = signal("");
 
     private ws!: WebSocket;
@@ -126,10 +125,16 @@ export class InariService {
                     this.clients.update((v) => v.filter((c) => c.producer_id !== data.data.id));
                     this.clients_count.update(() => this.clients().length + 1);
                 } else if (data.kind == 'sync_client_state') {
-                    const { force_muted, orientation, local_clients, display_name } = data.data;
+                    const { is_force_muted, is_muted, is_deafened, orientation, local_clients, display_name } = data.data;
 
                     this.displayName.set(display_name);
-                    this.isForceMute.set(force_muted);
+                    this.isForceMuted.set(is_force_muted);
+                    if (this.isDeafened() != is_deafened) {
+                        this.isDeafened.set(is_deafened);
+                    }
+                    if (this.isMuted() != is_muted) {
+                        this.isMuted.set(is_muted);
+                    }
                     const [x, y, z] = orientation;
                     const l = this.audioContext.listener;
                     const t = this.audioContext.currentTime;
@@ -181,7 +186,7 @@ export class InariService {
                 let { consumer_id, kind, rtp_parameters } = value;
 
                 const consumer = await this.consumers_transport.consume({ id: consumer_id, producerId: clientState.producer_id, kind, rtpParameters: rtp_parameters });
-                if (this.isDaefen()) {
+                if (this.isDeafened()) {
                     consumer.pause();
                 } else {
                     consumer.resume();
@@ -281,7 +286,10 @@ export class InariService {
             }
         });
 
-        const media = await navigator.mediaDevices.getUserMedia({ audio: true }).catch(() => this.disconnect());
+        const media = await navigator.mediaDevices.getUserMedia({ audio: true }).catch(() => {
+            this.errorService.setError('You must enable your microphone to use Inari!');
+            this.disconnect();
+        });
 
         if (!media) return;
         this.pageState.set(PageState.CONNECTED);
@@ -295,28 +303,28 @@ export class InariService {
 
     public async mute() {
 
-        if (this.isForceMute()) {
+        if (this.isForceMuted()) {
             return;
         }
 
-        if (this.isMute()) {
+        if (this.isMuted()) {
             this.producer.resume();
         } else {
             this.producer.pause();
         }
 
-        this.send('sync_client_state', { is_mute: !this.isMute(), is_daefen: this.isDaefen() });
-        this.isMute.update((v) => !v);
+        this.send('sync_client_state', { is_muted: !this.isMuted(), is_deafened: this.isDeafened() });
+        this.isMuted.update((v) => !v);
     }
 
-    public async daefen() {
-        if (this.isDaefen()) {
+    public async deafen() {
+        if (this.isDeafened()) {
             this.clients().forEach((v) => v.consumer?.resume());
         } else {
             this.clients().forEach((v) => v.consumer?.pause());
         }
-        this.send('sync_client_state', { is_mute: this.isMute(), is_daefen: !this.isDaefen() });
-        this.isDaefen.update((v) => !v);
+        this.send('sync_client_state', { is_muted: this.isMuted(), is_deafened: !this.isDeafened() });
+        this.isDeafened.update((v) => !v);
     }
 
     public async changeClientVolume(producer_id: string, value: string) {

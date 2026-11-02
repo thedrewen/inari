@@ -74,9 +74,9 @@
     </div>
     }
     <div class="buttons">
-        <button class="button" [style]="is.isForceMute() ? 'cursor: not-allowed;' : ''" (click)="is.mute()">
-            @if (is.isMute() || is.isForceMute()) {
-            <svg [class]="is.isForceMute() ? 'force-muted' : ''" viewBox="0 0 24 24" fill="none"
+        <button class="button" [style]="is.isForceMuted() ? 'cursor: not-allowed;' : ''" (click)="is.mute()">
+            @if (is.isMuted() || is.isForceMuted()) {
+            <svg [class]="is.isForceMuted() ? 'force-muted' : ''" viewBox="0 0 24 24" fill="none"
                 xmlns="http://www.w3.org/2000/svg">
                 <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
                 <g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g>
@@ -98,8 +98,8 @@
             </svg>
             }
         </button>
-        <button class="button" (click)="is.daefen()">
-            @if (is.isDaefen()) {
+        <button class="button" (click)="is.deafen()">
+            @if (is.isDeafened()) {
             <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
                 <g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g>

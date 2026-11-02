@@ -15,12 +15,13 @@ pub struct ClientState {
 }
 
 #[derive(Serialize, Debug, Deserialize, Clone)]
-pub struct Connection {
+pub struct ConnectionDefinition {
     pub code: String,
-    pub force_muted: bool,
+    pub display_name: String,
     pub is_connector: bool,
-    pub is_mute: bool,
-    pub is_daefen: bool
+    pub is_force_muted: bool,
+    pub is_muted: bool,
+    pub is_deafened: bool
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -43,6 +44,11 @@ impl ErrorType {
 #[derive(Serialize, Deserialize, Clone, Debug)]
 #[serde( tag = "kind", content = "data", rename_all = "snake_case" )]
 pub enum WsResponsesKind {
+    // All
+    Auth { max_distance: f64, app_version: String },
+    Error { message: String, details: String, code: u32 },
+    
+    // Clients
     RtpCapabilities { rtp_capabilities: RtpCapabilitiesFinalized },
     CreateTransport { id: TransportId, ice_parameters: IceParameters, ice_candidates: Vec<IceCandidate>, dtls_parameters: DtlsParameters },
     ConnectTransport {},
@@ -50,12 +56,10 @@ pub enum WsResponsesKind {
     AddClients { clients: Vec<ClientState> },
     RemoveClient { id: ProducerId },
     Consume { consumer_id: ConsumerId, kind: MediaKind, rtp_parameters: RtpParameters },
-    SyncClientState { force_muted: bool, orientation: [f64; 3], local_clients: Vec<ClientLocalState>, display_name: String },
-    Auth { max_distance: f64, app_version: String },
-    Error { message: String, details: String, code: u32 },
+    SyncClientState { is_force_muted: bool, is_muted: bool, is_deafened: bool, orientation: [f64; 3], local_clients: Vec<ClientLocalState>, display_name: String },
     
     // Connectors
-    SyncConnectorState { connections: Vec<Connection> }
+    SyncConnectorState { connections: Vec<ConnectionDefinition> }
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]

@@ -48,6 +48,9 @@ The project requires a `.env` file at the root of each service. Refer to the cor
 
 ## Running
 
+> [!WARNING]  
+> You must use a reverse proxy with a TLS certificate!
+
 Docker Hub : https://hub.docker.com/r/thedrewen/inari
 
 ### Latest (Stable & Nightly)

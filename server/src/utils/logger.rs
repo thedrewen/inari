@@ -25,11 +25,15 @@ pub fn log_start(config: &Config) {
     Git : https://git.foxdroidlabs.com/Foxdroid-Prod/inari
     Docker Hub : https://hub.docker.com/r/thedrewen/inari
     Discord : https://discord.gg/4vCG6vMNDJ
+    Preferred protocol : {}
     Max Distance : {}
+    Default channel : {}
     
 ",
         config.app_version(),
-        config.max_distance()    
+        config.protocol_mode(),
+        config.max_distance(),
+        config.default_channel()
     );
     
     if *config.is_generated_api_key() {

@@ -1,7 +1,5 @@
 use std::{
-    collections::HashMap,
-    num::{NonZeroU8, NonZeroU32},
-    sync::{Arc, atomic::AtomicUsize},
+    collections::HashMap, fmt::format, num::{NonZeroU8, NonZeroU32}, sync::{Arc, atomic::AtomicUsize},
 };
 
 use getset::Getters;
@@ -23,8 +21,7 @@ use crate::{
             requests::ClientConnectorDefinition,
             responses::{ClientLocalState, WsResponses, WsResponsesKind},
         },
-    },
-    utils::{config::Config, logger},
+    }, utils::{config::Config, logger::{self, log_info}},
 };
 
 #[derive(Clone, Getters)]
@@ -126,9 +123,17 @@ impl InariRouter {
     }
 
     pub async fn create_transport(&self, client: &Client) -> WebRtcTransport {
-        let options = WebRtcTransportOptions::new_with_server(
+        let mut options = WebRtcTransportOptions::new_with_server(
             client.bundle().mediasoup_manager.webrtc_server().clone(),
         );
+        
+        options.enable_tcp = true;
+        options.enable_udp = true;
+
+        let tcp = self.config.protocol_mode() == "tcp";
+        options.prefer_udp = !tcp;
+        options.prefer_tcp = tcp;
+
         let transport = self.router.create_webrtc_transport(options).await.unwrap();
         transport
     }

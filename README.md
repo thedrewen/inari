@@ -44,6 +44,7 @@ The project requires a `.env` file at the root of each service. Refer to the cor
 | WEBRTC_SERVER_PORT | WebRTC server port | 44444 |
 | MAX_DISTANCE | The maximum distance at which users can hear each other. | 20 |
 | DEFAULT_CHANNEL | Default channel for users. | default |
+| PROTOCOL_MODE | `udp` or `tcp`, Set the audio transport protocol of your choice. This does not require the client to connect using this protocol, but it will set it as the default. | udp |
 
 ## Running
 

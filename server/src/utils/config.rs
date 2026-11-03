@@ -11,6 +11,7 @@ use crate::utils::logger;
 pub struct Config {
     api_port: u16,
     webrtc_server_port: u16,
+    protocol_mode: String,
     server_public_ip: String,
     api_key: String,
     default_channel: String,
@@ -54,6 +55,10 @@ impl Config {
             .and_then(|v| v.parse().ok())
             .unwrap_or(44444);
 
+        let protocol_mode: String = env::var("PROTOCOL_MODE")
+            .ok()
+            .unwrap_or(String::from("udp"));
+
         let max_distance: f64 = env::var("MAX_DISTANCE")
             .ok()
             .and_then(|v| v.parse().ok())
@@ -67,6 +72,7 @@ impl Config {
             default_channel,
             server_public_ip,
             webrtc_server_port,
+            protocol_mode,
             is_generated_api_key,
             max_distance,
             app_version

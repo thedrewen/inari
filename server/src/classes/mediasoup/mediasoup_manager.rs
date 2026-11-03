@@ -25,7 +25,7 @@ impl MediaSoupManager {
             .await
             .unwrap();
 
-        let listen_info = ListenInfo {
+        let listen_info_udp = ListenInfo {
             protocol: mediasoup::types::data_structures::Protocol::Udp,
             ip: std::net::IpAddr::V4(Ipv4Addr::UNSPECIFIED),
             announced_address: Some(
@@ -39,7 +39,21 @@ impl MediaSoupManager {
             send_buffer_size: None,
         };
 
-        let listen_infos = WebRtcServerListenInfos::new(listen_info);
+        let listen_info_tcp = ListenInfo {
+            protocol: mediasoup::types::data_structures::Protocol::Tcp,
+            ip: std::net::IpAddr::V4(Ipv4Addr::UNSPECIFIED),
+            announced_address: Some(
+                config.server_public_ip().clone(),
+            ),
+            port: Some(config.webrtc_server_port().clone()),
+            port_range: None,
+            expose_internal_ip: false,
+            flags: None,
+            recv_buffer_size: None,
+            send_buffer_size: None,
+        };
+
+        let listen_infos = WebRtcServerListenInfos::new(listen_info_udp).insert(listen_info_tcp);
         let webrtc_server_option = WebRtcServerOptions::new(listen_infos);
         let webrtc_server = worker
             .create_webrtc_server(webrtc_server_option)

@@ -55,7 +55,7 @@ Docker Hub : https://hub.docker.com/r/thedrewen/inari
 docker run --name inari \
     -e API_KEY=<GENERATE API KEY> \
     -e SERVER_PUBLIC_IP=<YOUR PUBLIC IP> \
-    -p 3030:3030 -p 44444:44444/udp \
+    -p 3030:3030 -p 44444:44444/udp -p 44444:44444 \
     --restart unless-stopped \
     thedrewen/inari:latest
 ```
@@ -66,7 +66,7 @@ docker run --name inari \
 docker run --name inari \
     -e API_KEY=<GENERATE API KEY> \
     -e SERVER_PUBLIC_IP=<YOUR PUBLIC IP> \
-    -p 3030:3030 -p 44444:44444/udp \
+    -p 3030:3030 -p 44444:44444/udp -p 44444:44444 \
     --restart unless-stopped \
     thedrewen/inari:stable
 ```
@@ -77,7 +77,7 @@ docker run --name inari \
 docker run --name inari \
     -e API_KEY=<GENERATE API KEY> \
     -e SERVER_PUBLIC_IP=<YOUR PUBLIC IP> \
-    -p 3030:3030 -p 44444:44444/udp \
+    -p 3030:3030 -p 44444:44444/udp -p 44444:44444 \
     --restart unless-stopped \
     thedrewen/inari:nightly
 ```

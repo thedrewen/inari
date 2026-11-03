@@ -13,7 +13,9 @@
     "tags": [],
     "features": [],
     "docker_images": {
-        "Nightly": "thedrewen/inari:nightly"
+        "Stable": "thedrewen/inari:stable",
+        "Nightly": "thedrewen/inari:nightly",
+        "Latest": "thedrewen/inari:latest"
     },
     "file_denylist": [],
     "startup_commands": {

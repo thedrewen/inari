@@ -12,15 +12,9 @@ Inari is a web application that can be self-hosted by an administrator, a server
 
 > ⚠️ The `main` branch contains the stable/nightly production code. `develop` is the active development branch, potentially unstable.
 
-## Demo
+## Documentation
 
-Follow this link to view the demo site : https://inari-demo.foxdroidlabs.com/
-
-
-## Tech stack
-
-**Frontend** - Angular   
-**Server** - Rust with WebSocket
+Installation, configuration, and usage are all documented on **https://inari.thedrewen.com/**
 
 ## Issues
 
@@ -31,66 +25,6 @@ If you encounter a problem, please report it via our [public GitHub](https://git
 - Foxdroidlabs Forgejo : [git.foxdroidlabs.com/Foxdroid-Prod/inari](https://git.foxdroidlabs.com/Foxdroid-Prod/inari) (Official Repository)
 - TheDreWen Forgejo : [git.thedrewen.com/InariProject/inari](https://git.thedrewen.com/InariProject/inari) (Mirror Repository)
 - Github : [github.com/thedrewen/inari](https://github.com/thedrewen/inari) (Mirror Repository)
-
-## Environment variables
-
-The project requires a `.env` file at the root of each service. Refer to the corresponding `.env.example` files.
-
-| Name | Description | Default Value |
-|:---- | :---------: | ------------: |
-| SERVER_PUBLIC_IP | Your server's public IP address | Empty |
-| API_PORT | API Port | 3030 |
-| API_KEY | Api key for game plugin/addon/mod | Auto Generated | 
-| WEBRTC_SERVER_PORT | WebRTC server port | 44444 |
-| MAX_DISTANCE | The maximum distance at which users can hear each other. | 20 |
-| DEFAULT_CHANNEL | Default channel for users. | default |
-| PROTOCOL_MODE | `udp` or `tcp`, Set the audio transport protocol of your choice. This does not require the client to connect using this protocol, but it will set it as the default. | udp |
-
-## Running
-
-> [!WARNING]  
-> You must use a reverse proxy with a TLS certificate!
-
-Docker Hub : https://hub.docker.com/r/thedrewen/inari
-
-### Latest (Stable & Nightly)
-
-```bash
-docker run --name inari \
-    -e API_KEY=<GENERATE API KEY> \
-    -e SERVER_PUBLIC_IP=<YOUR PUBLIC IP> \
-    -p 3030:3030 -p 44444:44444/udp -p 44444:44444 \
-    --restart unless-stopped \
-    thedrewen/inari:latest
-```
-
-### Stable
-
-```bash
-docker run --name inari \
-    -e API_KEY=<GENERATE API KEY> \
-    -e SERVER_PUBLIC_IP=<YOUR PUBLIC IP> \
-    -p 3030:3030 -p 44444:44444/udp -p 44444:44444 \
-    --restart unless-stopped \
-    thedrewen/inari:stable
-```
-
-### Nightly
-
-```bash
-docker run --name inari \
-    -e API_KEY=<GENERATE API KEY> \
-    -e SERVER_PUBLIC_IP=<YOUR PUBLIC IP> \
-    -p 3030:3030 -p 44444:44444/udp -p 44444:44444 \
-    --restart unless-stopped \
-    thedrewen/inari:nightly
-```
-
-By default, the project runs at http://localhost:3030.
-
-## Pelican/Pterodactyl
-- [Pelican](./resources/egg-inari-pelican.json)
-- [Pterodactyl](./resources/egg-inari-ptero.json)
 
 ## Use of AI within Inari.
 

@@ -1,5 +1,5 @@
 use std::{
-    collections::HashMap, fmt::format, num::{NonZeroU8, NonZeroU32}, sync::{Arc, atomic::AtomicUsize},
+    collections::HashMap, num::{NonZeroU8, NonZeroU32}, sync::{Arc, atomic::AtomicUsize},
 };
 
 use getset::Getters;
@@ -21,7 +21,7 @@ use crate::{
             requests::ClientConnectorDefinition,
             responses::{ClientLocalState, WsResponses, WsResponsesKind},
         },
-    }, utils::{config::Config, logger::{self, log_info}},
+    }, utils::{config::Config, logger::{self}},
 };
 
 #[derive(Clone, Getters)]

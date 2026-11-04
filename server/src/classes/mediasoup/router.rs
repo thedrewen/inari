@@ -201,13 +201,13 @@ impl InariRouter {
 
 
             if let Some(producer) = ws_client.producer() {
-                if *ws_client.is_muted().read().await || *ws_client.is_force_muted().read().await {
+                if *ws_client.is_muted().read().await || *is_force_muted {
                     let _ = producer.pause().await;
                 } else {
                     let _ = producer.resume().await;
                 }
             }
-
+            
 
             let mut related_positions: Vec<ClientLocalState> = vec![];
             if !*ws_client.is_deafened().read().await && !*ws_client.is_force_deafened().read().await {

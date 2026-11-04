@@ -10,7 +10,11 @@ Inari
 Inari is a web application that can be self-hosted by an administrator, a server creator, or any other user. It allows all users to connect through a proximity-based voice chat system that uses the position and head orientation of their in-game character. To function, it requires a connector that links Inari to the game server.
 </div>
 
-> ⚠️ The `main` branch contains the stable/nightly production code. `develop` is the active development branch, potentially unstable.
+> [!NOTE]
+> **Branches**
+> - `main`: stable, production-ready code. Tagged releases are cut from here.
+> - `develop`: active development and source of the nightly builds. It may be unstable or contain breaking changes.
+
 
 ## Documentation
 

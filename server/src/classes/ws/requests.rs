@@ -13,6 +13,7 @@ pub struct ClientConnectorDefinition {
     pub position: [f64; 3],
     pub head: [f64; 3], // Pitch Yaw
     pub is_force_muted: bool,
+    pub is_force_deafened: bool,
     pub display_name: Option<String>,
     pub group: Option<String>,
     pub actions: Option<ClientConnectorActions>

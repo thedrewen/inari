@@ -178,9 +178,9 @@ impl InariRouter {
                         
                         if let Some(producer) = ws_client.producer() {
                             if *ws_client.is_muted().read().await {
-                                let _ = producer.pause();
+                                let _ = producer.pause().await;
                             } else {
-                                let _ = producer.resume();
+                                let _ = producer.resume().await;
                             }
                         }
 
@@ -197,7 +197,7 @@ impl InariRouter {
             }
 
             let mut related_positions: Vec<ClientLocalState> = vec![];
-            if !*ws_client.is_deafened().read().await {
+            if !*ws_client.is_deafened().read().await && !*ws_client.is_force_deafened().read().await {
                 // for connector's client in connector's payload
                 for client_target in &clients {
                     if client.code == client_target.code {
@@ -253,6 +253,12 @@ impl InariRouter {
                 state_changed = true;
             }
 
+            let mut is_force_deafened = ws_client.is_force_deafened().write().await;
+            if *is_force_deafened != client.is_force_deafened {
+                *is_force_deafened = client.is_force_deafened;
+                state_changed = true;
+            }
+
             if related_positions.len() > 0 || state_changed
             {
                 let uuid = Uuid::new_v4().to_string();
@@ -260,6 +266,7 @@ impl InariRouter {
                     kind: WsResponsesKind::SyncClientState {
                         display_name: ws_client.display_name().read().await.clone(),
                         is_force_muted: client.is_force_muted,
+                        is_force_deafened: client.is_force_deafened,
                         orientation: client.head.clone(),
                         local_clients: related_positions,
                         is_deafened: *ws_client.is_deafened().read().await,

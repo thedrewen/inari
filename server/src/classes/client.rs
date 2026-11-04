@@ -46,6 +46,7 @@ pub struct Client {
     // Connector Data
     head_orientation: Arc<RwLock<[f64; 3]>>,
     is_force_muted: Arc<RwLock<bool>>,
+    is_force_deafened: Arc<RwLock<bool>>,
     is_muted: Arc<RwLock<bool>>,
     is_deafened: Arc<RwLock<bool>>,
     display_name: Arc<RwLock<String>>,
@@ -69,6 +70,7 @@ impl Client {
 
             head_orientation: Arc::new(RwLock::new([0.0, 0.0, 0.0])),
             is_force_muted: Arc::new(RwLock::new(true)),
+            is_force_deafened: Arc::new(RwLock::new(true)),
             is_muted: Arc::new(RwLock::new(false)),
             is_deafened: Arc::new(RwLock::new(false)),
             display_name: Arc::new(RwLock::new(format!("InariUser #{id}"))),

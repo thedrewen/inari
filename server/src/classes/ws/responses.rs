@@ -56,7 +56,7 @@ pub enum WsResponsesKind {
     AddClients { clients: Vec<ClientState> },
     RemoveClient { id: ProducerId },
     Consume { consumer_id: ConsumerId, kind: MediaKind, rtp_parameters: RtpParameters },
-    SyncClientState { is_force_muted: bool, is_muted: bool, is_deafened: bool, orientation: [f64; 3], local_clients: Vec<ClientLocalState>, display_name: String },
+    SyncClientState { is_force_muted: bool, is_force_deafened: bool, is_muted: bool, is_deafened: bool, orientation: [f64; 3], local_clients: Vec<ClientLocalState>, display_name: String },
     
     // Connectors
     SyncConnectorState { connections: Vec<ConnectionDefinition> }

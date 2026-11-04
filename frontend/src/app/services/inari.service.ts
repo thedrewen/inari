@@ -28,6 +28,7 @@ export class InariService {
 
     public isMuted = signal(false);
     public isForceMuted = signal(true);
+    public isForceDeafened = signal(true);
     public isDeafened = signal(false);
     public displayName = signal("");
 
@@ -125,10 +126,12 @@ export class InariService {
                     this.clients.update((v) => v.filter((c) => c.producer_id !== data.data.id));
                     this.clients_count.update(() => this.clients().length + 1);
                 } else if (data.kind == 'sync_client_state') {
-                    const { is_force_muted, is_muted, is_deafened, orientation, local_clients, display_name } = data.data;
+                    const { is_force_muted, is_force_deafened, is_muted, is_deafened, orientation, local_clients, display_name } = data.data;
 
                     this.displayName.set(display_name);
                     this.isForceMuted.set(is_force_muted);
+                    this.isForceDeafened.set(is_force_deafened);
+
                     if (this.isDeafened() != is_deafened) {
                         this.deafen(is_deafened);
                     }
@@ -322,6 +325,10 @@ export class InariService {
     }
 
     public async deafen(value: boolean|null = null) {
+
+        if (this.isForceDeafened()) {
+            return;
+        }
 
         if (value == null) {
             value = !this.isDeafened();

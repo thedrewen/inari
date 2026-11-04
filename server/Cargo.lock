@@ -932,7 +932,7 @@ dependencies = [
 
 [[package]]
 name = "inari"
-version = "1.6.1-nightly"
+version = "1.7.0-nightly"
 dependencies = [
  "chrono",
  "chrono-tz",

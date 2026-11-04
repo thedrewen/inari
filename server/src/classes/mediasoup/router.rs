@@ -175,15 +175,6 @@ impl InariRouter {
                     if toggle_muted {
                         let is_muted = *ws_client.is_muted().read().await;
                         *ws_client.is_muted().write().await = !is_muted;
-                        
-                        if let Some(producer) = ws_client.producer() {
-                            if *ws_client.is_muted().read().await {
-                                let _ = producer.pause().await;
-                            } else {
-                                let _ = producer.resume().await;
-                            }
-                        }
-
                         state_changed = true;
                     }
                 }
@@ -195,6 +186,28 @@ impl InariRouter {
                     }
                 }
             }
+
+            let mut is_force_muted = ws_client.is_force_muted().write().await;
+            if *is_force_muted != client.is_force_muted {
+                *is_force_muted = client.is_force_muted;
+                state_changed = true;
+            }
+
+            let mut is_force_deafened = ws_client.is_force_deafened().write().await;
+            if *is_force_deafened != client.is_force_deafened {
+                *is_force_deafened = client.is_force_deafened;
+                state_changed = true;
+            }
+
+
+            if let Some(producer) = ws_client.producer() {
+                if *ws_client.is_muted().read().await || *ws_client.is_force_muted().read().await {
+                    let _ = producer.pause().await;
+                } else {
+                    let _ = producer.resume().await;
+                }
+            }
+
 
             let mut related_positions: Vec<ClientLocalState> = vec![];
             if !*ws_client.is_deafened().read().await && !*ws_client.is_force_deafened().read().await {
@@ -244,18 +257,6 @@ impl InariRouter {
             let mut head_lock = ws_client.head_orientation().write().await;
             if *head_lock != client.head {
                 *head_lock = client.head;
-                state_changed = true;
-            }
-
-            let mut is_force_muted = ws_client.is_force_muted().write().await;
-            if *is_force_muted != client.is_force_muted {
-                *is_force_muted = client.is_force_muted;
-                state_changed = true;
-            }
-
-            let mut is_force_deafened = ws_client.is_force_deafened().write().await;
-            if *is_force_deafened != client.is_force_deafened {
-                *is_force_deafened = client.is_force_deafened;
                 state_changed = true;
             }
 

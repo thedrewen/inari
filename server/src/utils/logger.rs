@@ -40,7 +40,7 @@ pub fn log_start(config: &Config) {
         log_info(format!("================================================================================================"));
         log_info(format!("Telemetry is enabled. To disable it, add the environment variable `DISABLE_TELEMETRY=true`."));
         log_info(format!("We use telemetry to find out which version of Inari is being used and how many people are using it."));
-        log_info(format!("For more information about telemetry, visit https://inari.thedrewen.com/."));
+        log_info(format!("For more information about telemetry, visit https://inari.thedrewen.com/guides/configuration/#telemetry."));
         log_info(format!("================================================================================================"));
     }
     

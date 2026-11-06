@@ -1,8 +1,10 @@
-use std::env;
+use std::{env, fs::{self, File}};
 
 use dotenvy::dotenv;
 use getset::Getters;
 use rand::{RngExt, distr::Alphanumeric};
+use serde_json::{Value, json};
+use uuid::Uuid;
 
 use crate::utils::logger;
 
@@ -86,5 +88,23 @@ impl Config {
         }
     }
 
+    pub async fn send_telemetry_data(&self) {
+        if !*self.disable_telemetry() {
+            
+            match fs::exists("./inari.id") {
+                Ok(true) => {},
+                Ok(false) => {
+                    let unique_instance_id = Uuid::new_v4().to_string();
 
+                    let _ = fs::write("./inari.id", unique_instance_id.clone());
+
+                    let _resp = reqwest::Client::new().post("https://inari.thedrewen.com/api/telemetry")
+                        .json(&json!({"inari_version": *self.app_version(), "unique_instance_id": unique_instance_id}))
+                        .send()
+                        .await;
+                },
+                Err(_) => {}
+            }
+        }
+    }
 }

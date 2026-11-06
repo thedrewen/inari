@@ -10,9 +10,9 @@ pub struct App {
 impl App {
     pub async fn new() -> Self {
         let config = Config::new();
+        config.send_telemetry_data().await;
         logger::log_start(&config);
         let mediasoup_manager = MediaSoupManager::new(&config).await;
-        
         
         Self {
             config,

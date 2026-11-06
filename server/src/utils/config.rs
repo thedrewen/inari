@@ -17,7 +17,8 @@ pub struct Config {
     default_channel: String,
     is_generated_api_key: bool,
     max_distance: f64,
-    app_version: String
+    app_version: String,
+    disable_telemetry: bool
 }
 
 impl Config {
@@ -64,8 +65,13 @@ impl Config {
             .and_then(|v| v.parse().ok())
             .unwrap_or(20.0);
 
-        let app_version = env!("CARGO_PKG_VERSION").to_string();
+        let disable_telemetry: String = env::var("DISABLE_TELEMETRY ")
+            .ok()
+            .and_then(|v| v.parse().ok())
+            .unwrap_or("false".to_string());
 
+        let app_version = env!("CARGO_PKG_VERSION").to_string();
+        
         Self {
             api_port,
             api_key,
@@ -75,7 +81,8 @@ impl Config {
             protocol_mode,
             is_generated_api_key,
             max_distance,
-            app_version
+            app_version,
+            disable_telemetry: disable_telemetry == String::from("true")
         }
     }
 

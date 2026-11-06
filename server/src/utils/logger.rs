@@ -35,6 +35,14 @@ pub fn log_start(config: &Config) {
         config.max_distance(),
         config.default_channel()
     );
+
+    if !*config.disable_telemetry() {
+        log_info(format!("================================================================================================"));
+        log_info(format!("Telemetry is enabled. To disable it, add the environment variable `DISABLE_TELEMETRY=true`."));
+        log_info(format!("We use telemetry to find out which version of Inari is being used and how many people are using it."));
+        log_info(format!("For more information about telemetry, visit https://inari.thedrewen.com/."));
+        log_info(format!("================================================================================================"));
+    }
     
     if *config.is_generated_api_key() {
         log_info(format!("Auto Generated Api key : {}", config.api_key()));

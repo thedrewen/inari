@@ -65,13 +65,13 @@ impl Config {
             .and_then(|v| v.parse().ok())
             .unwrap_or(20.0);
 
-        let disable_telemetry: String = env::var("DISABLE_TELEMETRY ")
+        let disable_telemetry: String = env::var("DISABLE_TELEMETRY")
             .ok()
             .and_then(|v| v.parse().ok())
             .unwrap_or("false".to_string());
 
         let app_version = env!("CARGO_PKG_VERSION").to_string();
-        
+
         Self {
             api_port,
             api_key,

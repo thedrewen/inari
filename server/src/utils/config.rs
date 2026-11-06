@@ -1,9 +1,9 @@
-use std::{env, fs::{self, File}};
+use std::{env, fs::{self}};
 
 use dotenvy::dotenv;
 use getset::Getters;
 use rand::{RngExt, distr::Alphanumeric};
-use serde_json::{Value, json};
+use serde_json::{json};
 use uuid::Uuid;
 
 use crate::utils::logger;

@@ -1,6 +1,6 @@
 [package]
 name = "inari"
-version = "1.8.1-nightly"
+version = "1.2.0-stable"
 edition = "2024"
 
 [dependencies]

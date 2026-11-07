@@ -356,6 +356,7 @@ impl Client {
                                         display_name: client.display_name.read().await.clone(),
                                         is_connector: *client.is_connector(),
                                         is_force_muted: client.is_force_muted.read().await.clone(),
+                                        is_force_deafened: client.is_force_deafened.read().await.clone(),
                                         is_muted: client.is_muted.read().await.clone(),
                                         is_deafened: client.is_deafened.read().await.clone(),
                                     };

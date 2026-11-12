@@ -1,9 +1,12 @@
-use std::{env, fs::{self}};
+use std::{
+    env,
+    fs::{self},
+};
 
 use dotenvy::dotenv;
 use getset::Getters;
 use rand::{RngExt, distr::Alphanumeric};
-use serde_json::{json};
+use serde_json::json;
 use uuid::Uuid;
 
 use crate::utils::logger;
@@ -20,7 +23,7 @@ pub struct Config {
     is_generated_api_key: bool,
     max_distance: f64,
     app_version: String,
-    disable_telemetry: bool
+    disable_telemetry: bool,
 }
 
 impl Config {
@@ -84,15 +87,14 @@ impl Config {
             is_generated_api_key,
             max_distance,
             app_version,
-            disable_telemetry: disable_telemetry == String::from("true")
+            disable_telemetry: disable_telemetry == String::from("true"),
         }
     }
 
     pub async fn send_telemetry_data(&self) {
         if !*self.disable_telemetry() {
-            
             match fs::exists("./inari.id") {
-                Ok(true) => {},
+                Ok(true) => {}
                 Ok(false) => {
                     let unique_instance_id = Uuid::new_v4().to_string();
 
@@ -102,7 +104,7 @@ impl Config {
                         .json(&json!({"inari_version": *self.app_version(), "unique_instance_id": unique_instance_id}))
                         .send()
                         .await;
-                },
+                }
                 Err(_) => {}
             }
         }

@@ -1,9 +1,9 @@
 use crate::app::App;
 
 mod app;
-mod utils;
-mod routes;
 mod classes;
+mod routes;
+mod utils;
 
 #[tokio::main]
 async fn main() {

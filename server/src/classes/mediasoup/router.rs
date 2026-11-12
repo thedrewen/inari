@@ -1,5 +1,7 @@
 use std::{
-    collections::HashMap, num::{NonZeroU8, NonZeroU32}, sync::{Arc, atomic::AtomicUsize},
+    collections::HashMap,
+    num::{NonZeroU8, NonZeroU32},
+    sync::{Arc, atomic::AtomicUsize},
 };
 
 use getset::Getters;
@@ -21,7 +23,11 @@ use crate::{
             requests::ClientConnectorDefinition,
             responses::{ClientLocalState, WsResponses, WsResponsesKind},
         },
-    }, utils::{config::Config, logger::{self}},
+    },
+    utils::{
+        config::Config,
+        logger::{self},
+    },
 };
 
 #[derive(Clone, Getters)]
@@ -126,7 +132,7 @@ impl InariRouter {
         let mut options = WebRtcTransportOptions::new_with_server(
             client.bundle().mediasoup_manager.webrtc_server().clone(),
         );
-        
+
         options.enable_tcp = true;
         options.enable_udp = true;
 
@@ -186,19 +192,19 @@ impl InariRouter {
                     }
                 }
             }
-            
+
             let mut is_force_muted = ws_client.is_force_muted().write().await;
             if *is_force_muted != client.is_force_muted {
-              *is_force_muted = client.is_force_muted;
-              state_changed = true;
+                *is_force_muted = client.is_force_muted;
+                state_changed = true;
             }
-            
+
             {
-              let mut is_force_deafened = ws_client.is_force_deafened().write().await;
-              if *is_force_deafened != client.is_force_deafened {
-                  *is_force_deafened = client.is_force_deafened;
-                  state_changed = true;
-              }
+                let mut is_force_deafened = ws_client.is_force_deafened().write().await;
+                if *is_force_deafened != client.is_force_deafened {
+                    *is_force_deafened = client.is_force_deafened;
+                    state_changed = true;
+                }
             }
 
             if let Some(producer) = ws_client.producer() {
@@ -209,10 +215,12 @@ impl InariRouter {
                 }
             }
 
-          drop(is_force_muted);
+            drop(is_force_muted);
 
             let mut related_positions: Vec<ClientLocalState> = vec![];
-            if !*ws_client.is_deafened().read().await && !*ws_client.is_force_deafened().read().await {
+            if !*ws_client.is_deafened().read().await
+                && !*ws_client.is_force_deafened().read().await
+            {
                 // for connector's client in connector's payload
                 for client_target in &clients {
                     if client.code == client_target.code {
@@ -232,7 +240,11 @@ impl InariRouter {
                     // Get distance between client A and client B or client is force muted by connector
                     if client.distance_to(client_target) <= *self.config.max_distance()
                         && !client_target.is_force_muted
-                        && client.group.clone().unwrap_or(String::from("default")) == client_target.group.clone().unwrap_or(String::from("default"))
+                        && client.group.clone().unwrap_or(String::from("default"))
+                            == client_target
+                                .group
+                                .clone()
+                                .unwrap_or(String::from("default"))
                     {
                         ws_client.resume_consumer(producer.id()).await; // UnMute client B for client A
                         related_positions.push(ClientLocalState {
@@ -256,15 +268,14 @@ impl InariRouter {
                 }
             }
             {
-              let mut head_lock = ws_client.head_orientation().write().await;
-              if *head_lock != client.head {
-                  *head_lock = client.head;
-                  state_changed = true;
-              }
+                let mut head_lock = ws_client.head_orientation().write().await;
+                if *head_lock != client.head {
+                    *head_lock = client.head;
+                    state_changed = true;
+                }
             }
 
-            if related_positions.len() > 0 || state_changed
-            {
+            if related_positions.len() > 0 || state_changed {
                 let uuid = Uuid::new_v4().to_string();
                 ws_client.send(WsResponses {
                     kind: WsResponsesKind::SyncClientState {
@@ -274,7 +285,7 @@ impl InariRouter {
                         orientation: client.head.clone(),
                         local_clients: related_positions,
                         is_deafened: *ws_client.is_deafened().read().await,
-                        is_muted: *ws_client.is_muted().read().await
+                        is_muted: *ws_client.is_muted().read().await,
                     },
                     transaction_uuid: uuid,
                 });

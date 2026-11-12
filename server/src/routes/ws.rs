@@ -2,7 +2,7 @@ use std::sync::atomic::AtomicUsize;
 
 use warp::{Filter, reject::Rejection, reply::Reply};
 
-use crate::{app::{Bundle}, classes::client::Client};
+use crate::{app::Bundle, classes::client::Client};
 
 static NEXT_ID: AtomicUsize = AtomicUsize::new(1);
 
@@ -14,6 +14,6 @@ pub fn ws(bundle: Bundle) -> impl Filter<Error = Rejection, Extract = impl Reply
         .map(|ws: warp::ws::Ws, bundle| {
             let id = NEXT_ID.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
             let client = Client::new(id, bundle);
-            ws.on_upgrade(move |websocket| Client::handle(client, websocket) )
+            ws.on_upgrade(move |websocket| Client::handle(client, websocket))
         })
 }

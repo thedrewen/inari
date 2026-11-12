@@ -1,4 +1,10 @@
-use mediasoup::{producer::ProducerId, types::{data_structures::DtlsParameters, rtp_parameters::{MediaKind, RtpCapabilities, RtpParameters}}};
+use mediasoup::{
+    producer::ProducerId,
+    types::{
+        data_structures::DtlsParameters,
+        rtp_parameters::{MediaKind, RtpCapabilities, RtpParameters},
+    },
+};
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -16,7 +22,7 @@ pub struct ClientConnectorDefinition {
     pub is_force_deafened: bool,
     pub display_name: Option<String>,
     pub group: Option<String>,
-    pub actions: Option<ClientConnectorActions>
+    pub actions: Option<ClientConnectorActions>,
 }
 
 impl ClientConnectorDefinition {
@@ -31,28 +37,48 @@ impl ClientConnectorDefinition {
         [
             target.position[0] - self.position[0], // x
             target.position[1] - self.position[1], // y
-            target.position[2] - self.position[2] // z
+            target.position[2] - self.position[2], // z
         ]
     }
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
-#[serde( tag = "kind", content = "data", rename_all = "snake_case" )]
+#[serde(tag = "kind", content = "data", rename_all = "snake_case")]
 pub enum WsRequestsKind {
     // All
-    Auth { is_connector: bool, auth_key: String, channel: String },
-    
+    Auth {
+        is_connector: bool,
+        auth_key: String,
+        channel: String,
+    },
+
     // Clients
-    RtpCapabilities {  },
-    CreateTransport { is_producer: bool },
-    ConnectTransport { is_producer: bool, dtls_parameters: DtlsParameters },
-    Produce { kind: MediaKind, rtp_parameters: RtpParameters },
-    FetchClients { },
-    Consume { producer_id: ProducerId, rtp_capabilities: RtpCapabilities },
-    SyncClientState { is_muted: bool, is_deafened: bool },
-    
+    RtpCapabilities {},
+    CreateTransport {
+        is_producer: bool,
+    },
+    ConnectTransport {
+        is_producer: bool,
+        dtls_parameters: DtlsParameters,
+    },
+    Produce {
+        kind: MediaKind,
+        rtp_parameters: RtpParameters,
+    },
+    FetchClients {},
+    Consume {
+        producer_id: ProducerId,
+        rtp_capabilities: RtpCapabilities,
+    },
+    SyncClientState {
+        is_muted: bool,
+        is_deafened: bool,
+    },
+
     // Connectors
-    SyncConnectorState { clients: Vec<ClientConnectorDefinition> },
+    SyncConnectorState {
+        clients: Vec<ClientConnectorDefinition>,
+    },
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -60,4 +86,4 @@ pub struct WsRequests {
     #[serde(flatten)]
     pub kind: WsRequestsKind,
     pub transaction_uuid: String,
-}   
+}

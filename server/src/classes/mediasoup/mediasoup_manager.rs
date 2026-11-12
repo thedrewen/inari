@@ -2,10 +2,18 @@ use std::{collections::HashMap, net::Ipv4Addr, sync::Arc};
 
 use event_listener_primitives::HandlerId;
 use getset::Getters;
-use mediasoup::{types::data_structures::ListenInfo, webrtc_server::{WebRtcServer, WebRtcServerListenInfos, WebRtcServerOptions}, worker::{Worker, WorkerSettings}, worker_manager::WorkerManager};
+use mediasoup::{
+    types::data_structures::ListenInfo,
+    webrtc_server::{WebRtcServer, WebRtcServerListenInfos, WebRtcServerOptions},
+    worker::{Worker, WorkerSettings},
+    worker_manager::WorkerManager,
+};
 use tokio::sync::RwLock;
 
-use crate::{classes::mediasoup::router::InariRouter, utils::{config::Config, logger}};
+use crate::{
+    classes::mediasoup::router::InariRouter,
+    utils::{config::Config, logger},
+};
 
 #[derive(Clone, Getters)]
 pub struct MediaSoupManager {
@@ -13,8 +21,8 @@ pub struct MediaSoupManager {
     webrtc_server: WebRtcServer,
     worker: Worker,
     routers: Arc<RwLock<HashMap<String, InariRouter>>>,
-    
-    _webrtc_server_on_close: HandlerId
+
+    _webrtc_server_on_close: HandlerId,
 }
 
 impl MediaSoupManager {
@@ -28,9 +36,7 @@ impl MediaSoupManager {
         let listen_info_udp = ListenInfo {
             protocol: mediasoup::types::data_structures::Protocol::Udp,
             ip: std::net::IpAddr::V4(Ipv4Addr::UNSPECIFIED),
-            announced_address: Some(
-                config.server_public_ip().clone(),
-            ),
+            announced_address: Some(config.server_public_ip().clone()),
             port: Some(config.webrtc_server_port().clone()),
             port_range: None,
             expose_internal_ip: false,
@@ -42,9 +48,7 @@ impl MediaSoupManager {
         let listen_info_tcp = ListenInfo {
             protocol: mediasoup::types::data_structures::Protocol::Tcp,
             ip: std::net::IpAddr::V4(Ipv4Addr::UNSPECIFIED),
-            announced_address: Some(
-                config.server_public_ip().clone(),
-            ),
+            announced_address: Some(config.server_public_ip().clone()),
             port: Some(config.webrtc_server_port().clone()),
             port_range: None,
             expose_internal_ip: false,
@@ -64,7 +68,8 @@ impl MediaSoupManager {
             logger::log_error("WebrtcServer Closed !".into());
         });
 
-        let default_router = InariRouter::new(&worker, &config, config.default_channel().clone(), true).await;
+        let default_router =
+            InariRouter::new(&worker, &config, config.default_channel().clone(), true).await;
         let mut routers = HashMap::new();
         routers.insert(config.default_channel().clone(), default_router);
 
@@ -73,17 +78,16 @@ impl MediaSoupManager {
             webrtc_server,
             worker,
             _webrtc_server_on_close,
-            routers: Arc::new(RwLock::new(routers))
+            routers: Arc::new(RwLock::new(routers)),
         }
     }
-
 
     pub async fn get_router(&self, name: String, config: &Config) -> InariRouter {
         let mut routers_lock = self.routers.write().await;
 
         if let Some(router) = routers_lock.get(&name) {
             return router.clone();
-        } 
+        }
 
         let router = InariRouter::new(&self.worker, &config, name.clone(), false).await;
 

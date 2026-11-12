@@ -3,7 +3,11 @@ use std::{collections::HashMap, sync::Arc, time::Duration, vec};
 use futures_util::{SinkExt, StreamExt};
 use getset::Getters;
 use mediasoup::{
-    consumer::{Consumer, ConsumerOptions}, producer::{Producer, ProducerId, ProducerOptions}, transport::Transport, types::rtp_parameters::{MediaKind, RtpCapabilities, RtpParameters}, webrtc_transport::{WebRtcTransport, WebRtcTransportRemoteParameters},
+    consumer::{Consumer, ConsumerOptions},
+    producer::{Producer, ProducerId, ProducerOptions},
+    transport::Transport,
+    types::rtp_parameters::{MediaKind, RtpCapabilities, RtpParameters},
+    webrtc_transport::{WebRtcTransport, WebRtcTransportRemoteParameters},
 };
 use tokio::{
     sync::{RwLock, mpsc::UnboundedSender},
@@ -13,11 +17,17 @@ use uuid::Uuid;
 use warp::filters::ws::{Message, WebSocket};
 
 use crate::{
-    app::Bundle, classes::{
-        mediasoup::router::InariRouter, ws::{
-            requests::{WsRequests, WsRequestsKind}, responses::{ClientState, ConnectionDefinition, ErrorType, WsResponses, WsResponsesKind},
+    app::Bundle,
+    classes::{
+        mediasoup::router::InariRouter,
+        ws::{
+            requests::{WsRequests, WsRequestsKind},
+            responses::{
+                ClientState, ConnectionDefinition, ErrorType, WsResponses, WsResponsesKind,
+            },
         },
-    }, utils::logger,
+    },
+    utils::logger,
 };
 
 const IDLE_TIMEOUT: Duration = Duration::from_secs(30);
@@ -356,7 +366,11 @@ impl Client {
                                         display_name: client.display_name.read().await.clone(),
                                         is_connector: *client.is_connector(),
                                         is_force_muted: client.is_force_muted.read().await.clone(),
-                                        is_force_deafened: client.is_force_deafened.read().await.clone(),
+                                        is_force_deafened: client
+                                            .is_force_deafened
+                                            .read()
+                                            .await
+                                            .clone(),
                                         is_muted: client.is_muted.read().await.clone(),
                                         is_deafened: client.is_deafened.read().await.clone(),
                                     };
@@ -368,7 +382,14 @@ impl Client {
                                     transaction_uuid: value.transaction_uuid.clone(),
                                 });
                             } else {
-                                self.send(WsResponses { kind: WsResponsesKind::Error { message: ErrorType::Unauthorized.to_str(), details: "You're not a connector.".to_string(), code: 401 }, transaction_uuid: value.transaction_uuid.clone() });
+                                self.send(WsResponses {
+                                    kind: WsResponsesKind::Error {
+                                        message: ErrorType::Unauthorized.to_str(),
+                                        details: "You're not a connector.".to_string(),
+                                        code: 401,
+                                    },
+                                    transaction_uuid: value.transaction_uuid.clone(),
+                                });
                             }
                         }
                     }

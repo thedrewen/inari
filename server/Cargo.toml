@@ -1,6 +1,6 @@
 [package]
 name = "inari"
-version = "1.8.2-nightly"
+version = "1.2.1-stable"
 edition = "2024"
 
 [dependencies]
@@ -10,12 +10,12 @@ dotenvy = "0.15.7"
 getset = "0.1.7"
 futures-util = "0.3.34"
 mediasoup = "0.33.2"
-rand = "0.10.3"
+rand = "0.10.4"
 serde = { version = "1.0.229", features = ["derive"] }
 serde_json = "1.0.154"
 tokio = { version = "1.54.1", features = ["full"] }
-uuid = { version = "1.29.2", features = ["v4"] }
-warp = { version = "0.4.3", features = ["server", "websocket" ] }
+uuid = { version = "1.29.3", features = ["v4"] }
+warp = { version = "0.4.4", features = ["server", "websocket" ] }
 event-listener-primitives = "2.0.3"
 html-escape = "0.3.1"
 reqwest = { version = "0.13.5", features = ["json"] }

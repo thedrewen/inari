@@ -1,13 +1,63 @@
 use serde::Serialize;
 use warp::{Filter, Rejection, Reply};
 
-use crate::app::Bundle;
+use crate::{app::Bundle, classes::mediasoup::router::InariRouter};
 
 #[derive(Serialize)]
-pub struct Room {
+pub struct Client {
+    display_name: String,
+    is_force_muted: bool,
+    is_force_deafened: bool,
+    is_muted: bool,
+    is_deafened: bool,
+    head_orientation: [f64; 3],
+}
+
+#[derive(Serialize)]
+pub struct Channel {
     name: String,
     has_connector: bool,
     clients_count: usize,
+    permanent: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    clients: Option<Vec<Client>>,
+}
+
+impl Channel {
+    pub fn new(router: &InariRouter) -> Self {
+        Self {
+            name: (*router.name()).clone(),
+            clients_count: router
+                .client_count()
+                .load(std::sync::atomic::Ordering::Relaxed),
+            has_connector: router
+                .has_connector()
+                .load(std::sync::atomic::Ordering::Relaxed),
+            permanent: *router.permanent(),
+            clients: None,
+        }
+    }
+
+    pub async fn load_clients(mut v: Self, router: &InariRouter) -> Self {
+        let mut clients = vec![];
+
+        let rclients = router.clients().read().await.clone();
+        for c in rclients.values() {
+            clients.push(Client {
+                display_name: c.display_name().read().await.clone(),
+                head_orientation: c.head_orientation().read().await.clone(),
+
+                is_force_muted: c.is_force_muted().read().await.clone(),
+                is_force_deafened: c.is_force_deafened().read().await.clone(),
+                is_muted: c.is_muted().read().await.clone(),
+                is_deafened: c.is_deafened().read().await.clone(),
+            });
+        }
+
+        v.clients = Some(clients);
+
+        v
+    }
 }
 
 pub fn channels(bundle: Bundle) -> impl Filter<Extract = (impl Reply,), Error = Rejection> + Clone {
@@ -16,19 +66,11 @@ pub fn channels(bundle: Bundle) -> impl Filter<Extract = (impl Reply,), Error = 
     warp::path("channels")
         .and(bundle_filter)
         .then(|bundle: Bundle| async move {
-            let mut rooms: Vec<Room> = vec![];
+            let mut rooms: Vec<Channel> = vec![];
 
             let routers = bundle.mediasoup_manager.routers().read().await;
-            for (name, router) in routers.iter() {
-                rooms.push(Room {
-                    name: name.clone(),
-                    has_connector: router
-                        .has_connector()
-                        .load(std::sync::atomic::Ordering::Relaxed),
-                    clients_count: router
-                        .client_count()
-                        .load(std::sync::atomic::Ordering::Relaxed),
-                });
+            for router in routers.values() {
+                rooms.push(Channel::new(router));
             }
             warp::reply::json(&rooms)
         })

@@ -38,7 +38,7 @@ pub enum ErrorType {
     AlreadyConnected,
     Unauthorized,
     BadRequest,
-    Conflict
+    Conflict,
 }
 
 impl ErrorType {

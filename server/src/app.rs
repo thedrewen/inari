@@ -2,7 +2,7 @@ use warp::Filter;
 
 use crate::{
     classes::mediasoup::mediasoup_manager::MediaSoupManager,
-    routes::{index::index, ws::ws},
+    routes::{api::api, index::index, ws::ws},
     utils::{config::Config, logger},
 };
 
@@ -40,6 +40,7 @@ impl App {
             self.config.default_channel().clone(),
         )
         .or(ws(self.get_bundle()))
+        .or(api(self.get_bundle()))
         .or(warp::fs::file("./static/index.html"));
 
         warp::serve(routes).run(([0, 0, 0, 0], port)).await;

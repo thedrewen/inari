@@ -20,6 +20,7 @@ pub struct MediaSoupManager {
     #[getset(get = "pub")]
     webrtc_server: WebRtcServer,
     worker: Worker,
+    #[getset(get = "pub")]
     routers: Arc<RwLock<HashMap<String, InariRouter>>>,
 
     _webrtc_server_on_close: HandlerId,

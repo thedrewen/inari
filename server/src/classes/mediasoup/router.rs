@@ -1,7 +1,10 @@
 use std::{
     collections::HashMap,
     num::{NonZeroU8, NonZeroU32},
-    sync::{Arc, atomic::AtomicUsize},
+    sync::{
+        Arc,
+        atomic::{AtomicBool, AtomicUsize},
+    },
 };
 
 use getset::Getters;
@@ -40,6 +43,7 @@ pub struct InariRouter {
     client_count: Arc<AtomicUsize>,
     clients: Arc<RwLock<HashMap<usize, Client>>>,
     client_codes: Arc<RwLock<HashMap<String, usize>>>,
+    has_connector: Arc<AtomicBool>,
 }
 
 impl InariRouter {
@@ -69,6 +73,7 @@ impl InariRouter {
             client_count: Arc::new(AtomicUsize::new(0)),
             clients: Arc::new(RwLock::new(HashMap::new())),
             client_codes: Arc::new(RwLock::new(HashMap::new())),
+            has_connector: Arc::new(AtomicBool::new(false)),
         }
     }
 
@@ -84,6 +89,10 @@ impl InariRouter {
         ));
         self.client_count
             .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+        if *client.is_connector() {
+            self.has_connector
+                .store(true, std::sync::atomic::Ordering::Relaxed);
+        }
         self.client_codes
             .write()
             .await
@@ -100,10 +109,18 @@ impl InariRouter {
             client.id(),
             self.name
         ));
-        self.client_count
-            .fetch_sub(1, std::sync::atomic::Ordering::Relaxed);
-        self.clients.write().await.remove(client.id());
-        self.client_codes().write().await.remove(client.code());
+
+        if self.client_codes.read().await.contains_key(client.code()) {
+            self.client_count
+                .fetch_sub(1, std::sync::atomic::Ordering::Relaxed);
+            self.clients.write().await.remove(client.id());
+            self.client_codes().write().await.remove(client.code());
+        }
+
+        if *client.is_connector() {
+            self.has_connector
+                .store(false, std::sync::atomic::Ordering::Relaxed);
+        }
 
         if !self.permanent && self.client_count.load(std::sync::atomic::Ordering::Relaxed) == 0 {
             client

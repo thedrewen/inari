@@ -38,6 +38,7 @@ pub enum ErrorType {
     AlreadyConnected,
     Unauthorized,
     BadRequest,
+    Conflict
 }
 
 impl ErrorType {
@@ -46,6 +47,7 @@ impl ErrorType {
             ErrorType::AlreadyConnected => "ALREADY_CONNECTED".to_string(),
             ErrorType::Unauthorized => "UNAUTHORIZED".to_string(),
             ErrorType::BadRequest => "BAD_REQUEST".to_string(),
+            ErrorType::Conflict => "CONFLICT".to_string(),
         }
     }
 }

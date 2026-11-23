@@ -10,10 +10,10 @@ pub struct Room {
     clients_count: usize,
 }
 
-pub fn rooms(bundle: Bundle) -> impl Filter<Extract = (impl Reply,), Error = Rejection> + Clone {
+pub fn channels(bundle: Bundle) -> impl Filter<Extract = (impl Reply,), Error = Rejection> + Clone {
     let bundle_filter = warp::any().map(move || bundle.clone());
 
-    warp::path("rooms")
+    warp::path("channels")
         .and(bundle_filter)
         .then(|bundle: Bundle| async move {
             let mut rooms: Vec<Room> = vec![];

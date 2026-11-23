@@ -158,6 +158,19 @@ impl Client {
                                     });
                                     break;
                                 }
+                                if router.has_connector().load(std::sync::atomic::Ordering::Relaxed) {
+                                    router.remove_client(&self).await;
+                                    self.send(WsResponses {
+                                        kind: WsResponsesKind::Error {
+                                            message: ErrorType::Conflict.to_str(),
+                                            details: "A connector is already connected for this channel.".to_string(),
+                                            code: 409,
+                                        },
+                                        transaction_uuid: value.transaction_uuid.clone(),
+                                    });
+                                    break;
+                                }
+
                                 logger::log_info(format!(
                                     "Client #{} authenticated as server!",
                                     self.id

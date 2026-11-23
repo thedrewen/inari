@@ -3,17 +3,20 @@
 
 @if (is.pageState() == is.PageState.WAIT_FOR_CODE) {
 <main>
+    
     <h2>
-        Welcome on Inari, enter the code and the channel from the game to log in!
-    </h2>
-    <div class="input">
+        Welcome on Inari@if (!connectByQuery()) {, enter the code and the channel from the game to log in} !
+    </h2>   
+    @if (!connectByQuery()) {
+        <div class="input">
         <input [value]="authCode()" (input)="updateAuthCode($event.target.value)" placeholder="XXXXXX" type="text">
-    </div>
-    <div class="input">
-        <input [value]="channel()" (change)="updateChannel($event.target.value)" placeholder="default" type="text">
-    </div>
+        </div>
+        <div class="input">
+            <input [value]="channel()" (change)="updateChannel($event.target.value)" placeholder="default" type="text">
+        </div>
+    }
     <button class="button" [disabled]="onConnection() || authCode().length < 6" (click)="login()">
-        Log in
+        @if (!connectByQuery()) {Login}@else{Log in quickly}
     </button>
 </main>
 } @else if (is.pageState() == is.PageState.LOGGING_IN) {

@@ -15,6 +15,7 @@ import { Meta } from '@angular/platform-browser';
 export class Home implements OnInit, OnDestroy {
 
     public settingsOpen = signal(false);
+    public connectByQuery = signal(false);
 
     constructor (
         public readonly is: InariService,
@@ -25,7 +26,7 @@ export class Home implements OnInit, OnDestroy {
         if (query.channel && query.code) {
             this.channel.set(query.channel);
             this.authCode.set(query.code);
-            this.login();
+            this.connectByQuery.set(true);
         } else {
             if (!isDevMode()) {
                 const default_channel = meta.getTag('name="default-channel"');

@@ -1,4 +1,4 @@
-use std::sync::atomic::AtomicUsize;
+use std::sync::atomic::{AtomicUsize, Ordering};
 
 use warp::{Filter, reject::Rejection, reply::Reply};
 
@@ -12,7 +12,7 @@ pub fn ws(bundle: Bundle) -> impl Filter<Error = Rejection, Extract = impl Reply
         .and(warp::ws())
         .and(bundle_filter)
         .map(|ws: warp::ws::Ws, bundle| {
-            let id = NEXT_ID.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+            let id = NEXT_ID.fetch_add(1, Ordering::Relaxed);
             let client = Client::new(id, bundle);
             ws.on_upgrade(move |websocket| Client::handle(client, websocket))
         })

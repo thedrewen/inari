@@ -3,7 +3,7 @@ use std::{
     num::{NonZeroU8, NonZeroU32},
     sync::{
         Arc,
-        atomic::{AtomicBool, AtomicUsize},
+        atomic::{AtomicBool, AtomicUsize, Ordering},
     },
 };
 
@@ -87,11 +87,9 @@ impl InariRouter {
             client.id(),
             self.name
         ));
-        self.client_count
-            .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+        self.client_count.fetch_add(1, Ordering::Relaxed);
         if *client.is_connector() {
-            self.has_connector
-                .store(true, std::sync::atomic::Ordering::Relaxed);
+            self.has_connector.store(true, Ordering::Relaxed);
         }
         self.client_codes
             .write()
@@ -111,18 +109,16 @@ impl InariRouter {
         ));
 
         if self.client_codes.read().await.contains_key(client.code()) {
-            self.client_count
-                .fetch_sub(1, std::sync::atomic::Ordering::Relaxed);
+            self.client_count.fetch_sub(1, Ordering::Relaxed);
             self.clients.write().await.remove(client.id());
             self.client_codes().write().await.remove(client.code());
         }
 
         if *client.is_connector() {
-            self.has_connector
-                .store(false, std::sync::atomic::Ordering::Relaxed);
+            self.has_connector.store(false, Ordering::Relaxed);
         }
 
-        if !self.permanent && self.client_count.load(std::sync::atomic::Ordering::Relaxed) == 0 {
+        if !self.permanent && self.client_count.load(Ordering::Relaxed) == 0 {
             client
                 .bundle()
                 .mediasoup_manager
@@ -196,47 +192,43 @@ impl InariRouter {
             if let Some(actions) = &client.actions {
                 if let Some(toggle_muted) = actions.toggle_muted {
                     if toggle_muted {
-                        let is_muted = *ws_client.is_muted().read().await;
-                        *ws_client.is_muted().write().await = !is_muted;
+                        ws_client.is_muted().fetch_xor(true, Ordering::Relaxed);
                         state_changed = true;
                     }
                 }
                 if let Some(toggle_deafened) = actions.toggle_deafened {
                     if toggle_deafened {
-                        let is_deafened = *ws_client.is_deafened().read().await;
-                        *ws_client.is_deafened().write().await = !is_deafened;
+                        ws_client.is_deafened().fetch_xor(true, Ordering::Relaxed);
                         state_changed = true;
                     }
                 }
             }
 
-            let mut is_force_muted = ws_client.is_force_muted().write().await;
-            if *is_force_muted != client.is_force_muted {
-                *is_force_muted = client.is_force_muted;
+            let force_muted_changed = ws_client
+                .is_force_muted()
+                .swap(client.is_force_muted, Ordering::Relaxed)
+                != client.is_force_muted;
+            let force_deafened_changed = ws_client
+                .is_force_deafened()
+                .swap(client.is_force_deafened, Ordering::Relaxed)
+                != client.is_force_deafened;
+            if force_deafened_changed || force_muted_changed {
                 state_changed = true;
             }
 
-            {
-                let mut is_force_deafened = ws_client.is_force_deafened().write().await;
-                if *is_force_deafened != client.is_force_deafened {
-                    *is_force_deafened = client.is_force_deafened;
-                    state_changed = true;
-                }
-            }
-
             if let Some(producer) = ws_client.producer() {
-                if *ws_client.is_muted().read().await || *is_force_muted {
+                if ws_client.is_muted().load(Ordering::Relaxed)
+                    || ws_client.is_force_muted().load(Ordering::Relaxed)
+                {
                     let _ = producer.pause().await;
                 } else {
                     let _ = producer.resume().await;
                 }
             }
 
-            drop(is_force_muted);
-
             let mut related_positions: Vec<ClientLocalState> = vec![];
-            if !*ws_client.is_deafened().read().await
-                && !*ws_client.is_force_deafened().read().await
+            if !ws_client.is_deafened().load(Ordering::Relaxed)
+                && !ws_client.is_force_deafened().load(Ordering::Relaxed)
             {
                 // for connector's client in connector's payload
                 for client_target in &clients {
@@ -301,8 +293,8 @@ impl InariRouter {
                         is_force_deafened: client.is_force_deafened,
                         orientation: client.head.clone(),
                         local_clients: related_positions,
-                        is_deafened: *ws_client.is_deafened().read().await,
-                        is_muted: *ws_client.is_muted().read().await,
+                        is_deafened: ws_client.is_deafened().load(Ordering::Relaxed),
+                        is_muted: ws_client.is_muted().load(Ordering::Relaxed),
                     },
                     transaction_uuid: uuid,
                 });

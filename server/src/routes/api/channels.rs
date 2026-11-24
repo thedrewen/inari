@@ -1,3 +1,5 @@
+use std::sync::atomic::Ordering;
+
 use serde::Serialize;
 use warp::{Filter, Rejection, Reply};
 
@@ -11,6 +13,7 @@ pub struct Client {
     is_muted: bool,
     is_deafened: bool,
     head_orientation: [f64; 3],
+    is_connector: bool,
 }
 
 #[derive(Serialize)]
@@ -27,12 +30,8 @@ impl Channel {
     pub fn new(router: &InariRouter) -> Self {
         Self {
             name: (*router.name()).clone(),
-            clients_count: router
-                .client_count()
-                .load(std::sync::atomic::Ordering::Relaxed),
-            has_connector: router
-                .has_connector()
-                .load(std::sync::atomic::Ordering::Relaxed),
+            clients_count: router.client_count().load(Ordering::Relaxed),
+            has_connector: router.has_connector().load(Ordering::Relaxed),
             permanent: *router.permanent(),
             clients: None,
         }
@@ -47,10 +46,11 @@ impl Channel {
                 display_name: c.display_name().read().await.clone(),
                 head_orientation: c.head_orientation().read().await.clone(),
 
-                is_force_muted: c.is_force_muted().read().await.clone(),
-                is_force_deafened: c.is_force_deafened().read().await.clone(),
-                is_muted: c.is_muted().read().await.clone(),
-                is_deafened: c.is_deafened().read().await.clone(),
+                is_force_muted: c.is_force_muted().load(Ordering::Relaxed),
+                is_force_deafened: c.is_force_deafened().load(Ordering::Relaxed),
+                is_muted: c.is_muted().load(Ordering::Relaxed),
+                is_deafened: c.is_deafened().load(Ordering::Relaxed),
+                is_connector: *c.is_connector(),
             });
         }
 

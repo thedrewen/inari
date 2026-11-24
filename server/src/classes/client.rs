@@ -1,4 +1,12 @@
-use std::{collections::HashMap, sync::Arc, time::Duration, vec};
+use std::{
+    collections::HashMap,
+    sync::{
+        Arc,
+        atomic::{AtomicBool, Ordering},
+    },
+    time::Duration,
+    vec,
+};
 
 use futures_util::{SinkExt, StreamExt};
 use getset::Getters;
@@ -55,11 +63,12 @@ pub struct Client {
 
     // Connector Data
     head_orientation: Arc<RwLock<[f64; 3]>>,
-    is_force_muted: Arc<RwLock<bool>>,
-    is_force_deafened: Arc<RwLock<bool>>,
-    is_muted: Arc<RwLock<bool>>,
-    is_deafened: Arc<RwLock<bool>>,
     display_name: Arc<RwLock<String>>,
+
+    is_force_muted: Arc<AtomicBool>,
+    is_force_deafened: Arc<AtomicBool>,
+    is_muted: Arc<AtomicBool>,
+    is_deafened: Arc<AtomicBool>,
 }
 
 impl Client {
@@ -79,10 +88,10 @@ impl Client {
             consumers: Arc::new(RwLock::new(HashMap::new())),
 
             head_orientation: Arc::new(RwLock::new([0.0, 0.0, 0.0])),
-            is_force_muted: Arc::new(RwLock::new(true)),
-            is_force_deafened: Arc::new(RwLock::new(true)),
-            is_muted: Arc::new(RwLock::new(false)),
-            is_deafened: Arc::new(RwLock::new(false)),
+            is_force_muted: Arc::new(AtomicBool::new(true)),
+            is_force_deafened: Arc::new(AtomicBool::new(true)),
+            is_muted: Arc::new(AtomicBool::new(false)),
+            is_deafened: Arc::new(AtomicBool::new(false)),
             display_name: Arc::new(RwLock::new(format!("InariUser #{id}"))),
         }
     }
@@ -158,10 +167,7 @@ impl Client {
                                     });
                                     break;
                                 }
-                                if router
-                                    .has_connector()
-                                    .load(std::sync::atomic::Ordering::Relaxed)
-                                {
+                                if router.has_connector().load(Ordering::Relaxed) {
                                     router.remove_client(&self).await;
                                     self.send(WsResponses {
                                         kind: WsResponsesKind::Error {
@@ -358,7 +364,7 @@ impl Client {
                             is_muted,
                             is_deafened,
                         } => {
-                            *self.is_muted.write().await = is_muted;
+                            self.is_muted.store(is_muted, Ordering::Relaxed);
                             if let Some(producer) = self.producer.clone() {
                                 if is_muted {
                                     let _ = producer.pause().await;
@@ -366,7 +372,7 @@ impl Client {
                                     let _ = producer.resume().await;
                                 }
                             }
-                            *self.is_deafened.write().await = is_deafened;
+                            self.is_deafened.store(is_deafened, Ordering::Relaxed);
                         }
 
                         // Connectors
@@ -383,14 +389,14 @@ impl Client {
                                         code: client.code().clone(),
                                         display_name: client.display_name.read().await.clone(),
                                         is_connector: *client.is_connector(),
-                                        is_force_muted: client.is_force_muted.read().await.clone(),
+                                        is_force_muted: client
+                                            .is_force_muted
+                                            .load(Ordering::Relaxed),
                                         is_force_deafened: client
                                             .is_force_deafened
-                                            .read()
-                                            .await
-                                            .clone(),
-                                        is_muted: client.is_muted.read().await.clone(),
-                                        is_deafened: client.is_deafened.read().await.clone(),
+                                            .load(Ordering::Relaxed),
+                                        is_muted: client.is_muted.load(Ordering::Relaxed),
+                                        is_deafened: client.is_deafened.load(Ordering::Relaxed),
                                     };
                                     connections.push(connection);
                                 }

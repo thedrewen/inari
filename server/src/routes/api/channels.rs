@@ -7,13 +7,13 @@ use crate::{app::Bundle, classes::mediasoup::router::InariRouter};
 
 #[derive(Serialize)]
 pub struct Client {
+    id: usize,
     display_name: String,
     is_force_muted: bool,
     is_force_deafened: bool,
     is_muted: bool,
     is_deafened: bool,
     head_orientation: [f64; 3],
-    is_connector: bool,
 }
 
 #[derive(Serialize)]
@@ -43,14 +43,14 @@ impl Channel {
         let rclients = router.clients().read().await.clone();
         for c in rclients.values() {
             clients.push(Client {
+                id: *c.id(),
                 display_name: c.display_name().read().await.clone(),
                 head_orientation: c.head_orientation().read().await.clone(),
 
                 is_force_muted: c.is_force_muted().load(Ordering::Relaxed),
                 is_force_deafened: c.is_force_deafened().load(Ordering::Relaxed),
                 is_muted: c.is_muted().load(Ordering::Relaxed),
-                is_deafened: c.is_deafened().load(Ordering::Relaxed),
-                is_connector: *c.is_connector(),
+                is_deafened: c.is_deafened().load(Ordering::Relaxed)
             });
         }
 

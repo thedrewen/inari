@@ -26,7 +26,6 @@ pub struct ClientState {
 pub struct ConnectionDefinition {
     pub code: String,
     pub display_name: String,
-    pub is_connector: bool,
     pub is_force_muted: bool,
     pub is_force_deafened: bool,
     pub is_muted: bool,

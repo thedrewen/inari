@@ -388,7 +388,6 @@ impl Client {
                                     let connection = ConnectionDefinition {
                                         code: client.code().clone(),
                                         display_name: client.display_name.read().await.clone(),
-                                        is_connector: *client.is_connector(),
                                         is_force_muted: client
                                             .is_force_muted
                                             .load(Ordering::Relaxed),

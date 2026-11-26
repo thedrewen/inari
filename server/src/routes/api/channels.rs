@@ -46,11 +46,10 @@ impl Channel {
                 id: *c.id(),
                 display_name: c.display_name().read().await.clone(),
                 head_orientation: c.head_orientation().read().await.clone(),
-
                 is_force_muted: c.is_force_muted().load(Ordering::Relaxed),
                 is_force_deafened: c.is_force_deafened().load(Ordering::Relaxed),
                 is_muted: c.is_muted().load(Ordering::Relaxed),
-                is_deafened: c.is_deafened().load(Ordering::Relaxed)
+                is_deafened: c.is_deafened().load(Ordering::Relaxed),
             });
         }
 

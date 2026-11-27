@@ -2,7 +2,7 @@
     {
         "code" : "user11",
         "is_force_muted": false,
-	      "is_force_deafened": false,
+        "is_force_deafened": false,
         "display_name": "User 11",
         "position" : [
             0,
@@ -18,7 +18,7 @@
     {
         "code" : "user22",
         "is_force_muted": false,
-	      "is_force_deafened": false,
+        "is_force_deafened": false,
         "display_name": "User 22",
         "position" : [
             0,

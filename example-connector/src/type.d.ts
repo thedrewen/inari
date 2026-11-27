@@ -3,6 +3,7 @@ export type ClientConnectorDefinition = {
     position: number[],
     head: number[],
     is_force_muted: boolean,
+    is_force_deafened: boolean,
     display_name?: string,
     group?: string,
     actions?: {
@@ -14,8 +15,8 @@ export type ClientConnectorDefinition = {
 export type ConnectionDefinition = {
     code: string,
     display_name: string,
-    is_connector: boolean,
     is_force_muted: boolean,
+    is_force_deafened: boolean,
     is_muted: boolean,
     is_deafened: boolean
 }

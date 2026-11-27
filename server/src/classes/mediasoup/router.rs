@@ -108,14 +108,14 @@ impl InariRouter {
             self.name
         ));
 
-        if self.client_codes.read().await.contains_key(client.code()) {
+        if self.client_codes.read().await.get(client.code()) == Some(client.id()) {
             self.client_count.fetch_sub(1, Ordering::Relaxed);
             self.clients.write().await.remove(client.id());
             self.client_codes().write().await.remove(client.code());
-        }
 
-        if *client.is_connector() {
-            self.has_connector.store(false, Ordering::Relaxed);
+            if *client.is_connector() {
+                self.has_connector.store(false, Ordering::Relaxed);
+            }
         }
 
         if !self.permanent && self.client_count.load(Ordering::Relaxed) == 0 {
@@ -125,7 +125,7 @@ impl InariRouter {
                 .close_router(self.name.clone())
                 .await;
         }
-
+        
         if let Some(producer) = client.producer() {
             for client in self.clients.read().await.values() {
                 let uuid = Uuid::new_v4().to_string();
